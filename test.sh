@@ -5,6 +5,8 @@ mkdir -p test/tile/data/x001/x128
 
 wget https://rome2025h1.fly.storage.tigris.dev/tile/data/x001/x134/068 -O test/tile/data/x001/x134/068
 wget https://rome2025h1.fly.storage.tigris.dev/tile/data/x001/x128/044 -O test/tile/data/x001/x128/044
+wget https://rome2025h1.fly.storage.tigris.dev/tile/data/x001/x134/069 -O test/tile/data/x001/x134/069
+wget https://rome2025h1.fly.storage.tigris.dev/tile/data/x001/x128/045 -O test/tile/data/x001/x128/045
 
 # imdl torrent create --link --input test/ --name "piece1" --output test/1.torrent
 # imdl torrent create --link --input test/ --name "piece2" --output test/2.torrent
