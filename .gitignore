@@ -2,3 +2,5 @@
 /test
 .aider*
 .envrc
+venv
+__pycache__
