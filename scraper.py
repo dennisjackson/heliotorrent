@@ -12,31 +12,37 @@
 
 def get_hash_tile_paths(startEntry, endEntry):
     """
-    Generate tile paths for entries between startEntry and endEntry (inclusive).
+    Generate hash tile paths for entries between startEntry and endEntry (inclusive).
 
     Each tile contains 2^8 = 256 entries. The tile index is calculated as
     entry_index // 256.
+    
+    Hash tiles are served at <monitoring prefix>/tile/<L>/<N> where:
+    - <L> is the level (0-5)
+    - <N> is the index encoded as x001/x234/067
 
     Args:
         startEntry: The first entry index to include
         endEntry: The last entry index to include
 
     Yields:
-        Tile paths in the format 'x001/x234/067'
+        Tile paths for each level in the format 'tile/level/x001/x234/067'
     """
     # Calculate the tile indices for the start and end entries
     start_tile = startEntry // 256
     end_tile = endEntry // 256
 
-    # Generate paths for all tiles between start_tile and end_tile (inclusive)
-    for tile_index in range(start_tile, end_tile + 1):
-        # Convert the tile index to a string representation
-        tile_str = str(tile_index).zfill(9)  # Pad to 9 digits
+    # For each level (0-5)
+    for level in range(6):
+        # Generate paths for all tiles between start_tile and end_tile (inclusive)
+        for tile_index in range(start_tile, end_tile + 1):
+            # Convert the tile index to a string representation
+            tile_str = str(tile_index).zfill(9)  # Pad to 9 digits
 
-        # Format as x001/x234/067
-        path = f"tile/x{tile_str[0:3]}/x{tile_str[3:6]}/{tile_str[6:9]}"
+            # Format as tile/level/x001/x234/067
+            path = f"tile/{level}/x{tile_str[0:3]}/x{tile_str[3:6]}/{tile_str[6:9]}"
 
-        yield path
+            yield path
 
 # The log entries are served as a “data tile” at
 

@@ -56,8 +56,12 @@ def test_get_hash_tile_paths_adjacent_tiles():
 def test_get_hash_tile_paths_multiple_tiles():
     """Test when start and end entries span multiple tiles"""
     paths = list(get_hash_tile_paths(256*5, 256*8 + 100))
-    assert len(paths) == 4  # 6 levels * 4 tiles
+    assert len(paths) == 24  # 6 levels * 4 tiles
     # Check first tile at level 0
     assert paths[0] == "tile/0/x000/x000/005"
-    # Check last tile at level 5
+    # Check last tile at level 0
     assert paths[3] == "tile/0/x000/x000/008"
+    # Check first tile at level 5
+    assert paths[20] == "tile/5/x000/x000/005"
+    # Check last tile at level 5
+    assert paths[23] == "tile/5/x000/x000/008"
