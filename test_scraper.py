@@ -55,3 +55,24 @@ def test_get_hash_tile_paths_multiple_tiles():
     assert paths[3] == "tile/0/x000/x000/008"
     # Check tile at level 1
     assert paths[4] == "tile/1/x000/x000/000"
+
+def test_get_hash_tile_paths_large_range():
+    """Test with a large range that spans multiple levels"""
+    # Range of 100,000 entries (spans multiple levels)
+    paths = list(get_hash_tile_paths(0, 100000))
+    
+    # Should have:
+    # - 256 tiles at level 0 (covering entries 0-65535)
+    # - 1 tile at level 1 (covering entries 0-65535)
+    # - 1 tile at level 2 (covering entries 0-65535 and beyond)
+    assert len(paths) == 258
+    
+    # Check first and last tiles at level 0
+    assert paths[0] == "tile/0/x000/x000/000"
+    assert paths[255] == "tile/0/x000/x000/255"
+    
+    # Check tile at level 1
+    assert paths[256] == "tile/1/x000/x000/000"
+    
+    # Check tile at level 2
+    assert paths[257] == "tile/2/x000/x000/000"
