@@ -1,5 +1,5 @@
 import pytest
-from scraper import get_data_tile_paths
+from scraper import get_data_tile_paths, get_hash_tile_paths
 
 def test_get_data_tile_paths_single_tile():
     """Test when start and end entries are in the same tile"""
@@ -30,3 +30,34 @@ def test_get_data_tile_paths_large_indices():
     assert paths[0] == "data/x001/x234/567"
     assert paths[1] == "data/x001/x234/568"
     assert paths[2] == "data/x001/x234/569"
+
+def test_get_hash_tile_paths_single_tile():
+    """Test when start and end entries are in the same tile"""
+    paths = list(get_hash_tile_paths(0, 255))
+    assert len(paths) == 6  # 6 levels (0-5)
+    # Check level 0
+    assert paths[0] == "0/x000/x000/000"
+    # Check level 5
+    assert paths[5] == "5/x000/x000/000"
+
+def test_get_hash_tile_paths_adjacent_tiles():
+    """Test when start and end entries are in adjacent tiles"""
+    paths = list(get_hash_tile_paths(255, 256))
+    assert len(paths) == 12  # 6 levels * 2 tiles
+    # Check first tile at level 0
+    assert paths[0] == "0/x000/x000/000"
+    # Check second tile at level 0
+    assert paths[1] == "0/x000/x000/001"
+    # Check first tile at level 5
+    assert paths[10] == "5/x000/x000/000"
+    # Check second tile at level 5
+    assert paths[11] == "5/x000/x000/001"
+
+def test_get_hash_tile_paths_multiple_tiles():
+    """Test when start and end entries span multiple tiles"""
+    paths = list(get_hash_tile_paths(256*5, 256*8 + 100))
+    assert len(paths) == 24  # 6 levels * 4 tiles
+    # Check first tile at level 0
+    assert paths[0] == "0/x000/x000/005"
+    # Check last tile at level 5
+    assert paths[23] == "5/x000/x000/008"
