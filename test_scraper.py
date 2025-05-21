@@ -34,34 +34,24 @@ def test_get_data_tile_paths_large_indices():
 def test_get_hash_tile_paths_single_tile():
     """Test when start and end entries are in the same tile"""
     paths = list(get_hash_tile_paths(0, 255))
-    assert len(paths) == 6  # 6 levels (0-5)
-    # Check level 0
+    assert len(paths) == 1  # Only level 0
     assert paths[0] == "tile/0/x000/x000/000"
-    # Check level 5
-    assert paths[5] == "tile/5/x000/x000/000"
 
 def test_get_hash_tile_paths_adjacent_tiles():
     """Test when start and end entries are in adjacent tiles"""
     paths = list(get_hash_tile_paths(255, 256))
-    assert len(paths) == 12  # 6 levels * 2 tiles
-    # Check first tile at level 0
+    assert len(paths) == 2  # Only level 0, 2 tiles
     assert paths[0] == "tile/0/x000/x000/000"
-    # Check second tile at level 0
     assert paths[1] == "tile/0/x000/x000/001"
-    # Check first tile at level 5
-    assert paths[10] == "tile/5/x000/x000/000"
-    # Check second tile at level 5
-    assert paths[11] == "tile/5/x000/x000/001"
 
 def test_get_hash_tile_paths_multiple_tiles():
     """Test when start and end entries span multiple tiles"""
     paths = list(get_hash_tile_paths(256*5, 256*8 + 100))
-    assert len(paths) == 24  # 6 levels * 4 tiles
-    # Check first tile at level 0
+    assert len(paths) == 5  # 4 tiles at level 0, 1 tile at level 1
+    # Check tiles at level 0
     assert paths[0] == "tile/0/x000/x000/005"
-    # Check last tile at level 0
+    assert paths[1] == "tile/0/x000/x000/006"
+    assert paths[2] == "tile/0/x000/x000/007"
     assert paths[3] == "tile/0/x000/x000/008"
-    # Check first tile at level 5
-    assert paths[20] == "tile/5/x000/x000/005"
-    # Check last tile at level 5
-    assert paths[23] == "tile/5/x000/x000/008"
+    # Check tile at level 1
+    assert paths[4] == "tile/1/x000/x000/000"
