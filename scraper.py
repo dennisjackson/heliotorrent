@@ -43,4 +43,29 @@ def get_hash_tile_paths(startEntry, endEntry):
 #     <monitoring prefix>/tile/data/<N>[.p/<W>]
 
 def get_data_tile_paths(startEntry, endEntry):
-    #TODO
+    """
+    Generate data tile paths for entries between startEntry and endEntry (inclusive).
+    
+    Data tiles are served at <monitoring prefix>/tile/data/<N> where:
+    - <N> is the index encoded as x001/x234/067
+    
+    Args:
+        startEntry: The first entry index to include
+        endEntry: The last entry index to include
+        
+    Yields:
+        Tile paths in the format 'data/x001/x234/067'
+    """
+    # Calculate the tile indices for the start and end entries
+    start_tile = startEntry // 256
+    end_tile = endEntry // 256
+    
+    # Generate paths for all tiles between start_tile and end_tile (inclusive)
+    for tile_index in range(start_tile, end_tile + 1):
+        # Convert the tile index to a string representation
+        tile_str = str(tile_index).zfill(9)  # Pad to 9 digits
+        
+        # Format as data/x001/x234/067
+        path = f"data/x{tile_str[0:3]}/x{tile_str[3:6]}/{tile_str[6:9]}"
+        
+        yield path
