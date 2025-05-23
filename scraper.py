@@ -10,88 +10,48 @@
 # begin with an `x`. For example, index 1234067 will be encoded as
 # `x001/x234/067`.
 
-def get_hash_tile_paths(startEntry, endEntry):
-    """
-    Generate hash tile paths for entries between startEntry and endEntry (inclusive).
+import math
+import subprocess
+import sys
 
-    Each tile contains 2^8 = 256 entries. The tile index is calculated as
-    entry_index // 256.
-    
-    Hash tiles are served at <monitoring prefix>/tile/<L>/<N> where:
-    - <L> is the level (0-5)
-    - <N> is the index encoded as x001/x234/067
-    
-    Higher levels only have entries if lower levels are full. For example,
-    level 1 only has entries if level 0 has at least 2^8 entries.
+TILE_SIZE = 256
+USER_AGENT = 'Experimental CT scraper using wget. Contact: scraper-reports@dennis-jackson.uk'
 
-    Args:
-        startEntry: The first entry index to include
-        endEntry: The last entry index to include
+def paths_in_level(start_tile,end_tile,treeSize):
+    for i in range(start_tile,min(end_tile,treeSize)):
+        tile_str = str(i).zfill(((len(str(i)) + 2) // 3) * 3)
+        parts = [f'{tile_str[j:j+3]}' for j in range(0, len(tile_str), 3)]
+        parts = [f'/x{x}' for x in parts[:-1]] + [parts[-1]]
+        yield '/'.join(parts)
 
-    Yields:
-        Tile paths for each level in the format 'tile/level/x001/x234/067'
-    """
-    # Calculate the tile indices for the start and end entries
-    start_tile = startEntry // 256
-    end_tile = endEntry // 256
-    
-    # Maximum possible level based on the end entry
-    max_level = 0
-    entries = endEntry + 1  # +1 because endEntry is inclusive
-    while entries > 256:
-        max_level += 1
-        entries = (entries + 255) // 256  # Ceiling division by 256
-    
-    max_level = min(max_level, 5)  # Cap at level 5
-    
-    # For each valid level
-    for level in range(max_level + 1):
-        # At each level, the tile size increases by a factor of 256
-        level_tile_size = 256 ** (level + 1)
-        level_tile_count = 256 ** level
-        
-        # Calculate the tile indices for this level
-        level_start_tile = start_tile // level_tile_count
-        level_end_tile = end_tile // level_tile_count
-        
-        # Generate paths for all tiles between level_start_tile and level_end_tile (inclusive)
-        for tile_index in range(level_start_tile, level_end_tile + 1):
-            # Convert the tile index to a string representation
-            tile_str = str(tile_index).zfill(9)  # Pad to 9 digits
-            
-            # Format as tile/level/x001/x234/067
-            path = f"tile/{level}/x{tile_str[0:3]}/x{tile_str[3:6]}/{tile_str[6:9]}"
-            
-            yield path
+def get_hash_tile_paths(startEntry, endEntry,treeSize):
+    for level in range(0,6):
+        startEntry //= TILE_SIZE
+        endEntry = math.ceil(endEntry / TILE_SIZE)
+        treeSize //= TILE_SIZE
+        yield from (f"tile/{level}/{x}" for x in paths_in_level(startEntry,endEntry,treeSize))
 
-# The log entries are served as a “data tile” at
+def get_data_tile_paths(startEntry,endEntry,treeSize):
+    startEntry //= TILE_SIZE
+    endEntry = math.ceil(endEntry / TILE_SIZE)
+    treeSize //= TILE_SIZE
+    yield from (f"tile/data/{x}" for x in paths_in_level(startEntry,endEntry,treeSize))
 
-#     <monitoring prefix>/tile/data/<N>[.p/<W>]
+def run_wget(output_dir,monitoring_path,tiles):
+    command = [
+        'wget',
+        '--input-file=-',
+        f'--base={monitoring_path}',
+        '--no-clobber',
+        '--retry-connrefused',
+        '--retry-on-host-error',
+        f'--directory-prefix={output_dir}',
+        '--compression=gzip',
+        '--no-verbose',
+        '--force-directories'
+    ]
+    subprocess.run(command, input="\n".join(tiles).encode(), stdout=sys.stdout)
 
-def get_data_tile_paths(startEntry, endEntry):
-    """
-    Generate data tile paths for entries between startEntry and endEntry (inclusive).
-
-    Data tiles are served at <monitoring prefix>/tile/data/<N> where:
-    - <N> is the index encoded as x001/x234/067
-
-    Args:
-        startEntry: The first entry index to include
-        endEntry: The last entry index to include
-
-    Yields:
-        Tile paths in the format 'data/x001/x234/067'
-    """
-    # Calculate the tile indices for the start and end entries
-    start_tile = startEntry // 256
-    end_tile = endEntry // 256
-
-    # Generate paths for all tiles between start_tile and end_tile (inclusive)
-    for tile_index in range(start_tile, end_tile + 1):
-        # Convert the tile index to a string representation
-        tile_str = str(tile_index).zfill(9)  # Pad to 9 digits
-
-        # Format as data/x001/x234/067
-        path = f"tile/data/x{tile_str[0:3]}/x{tile_str[3:6]}/{tile_str[6:9]}"
-
-        yield path
+# print([x for x in get_data_tile_paths(0,1024,2048)])
+# print([x for x in get_data_tile_paths(0,1004*256,9999*256)])
+run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(0,10879387,10879387)])

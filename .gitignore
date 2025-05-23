@@ -4,3 +4,4 @@
 .envrc
 venv
 __pycache__
+data/
