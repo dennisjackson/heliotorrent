@@ -8,16 +8,21 @@ from glob import glob
 TILE_SIZE = 256
 
 
+def int_to_parts(i):
+    tile_str = str(i).zfill(((len(str(i)) + 2) // 3) * 3)
+    parts = [f"{tile_str[j:j+3]}" for j in range(0, len(tile_str), 3)]
+    parts = [f"x{x}" for x in parts[:-1]] + [parts[-1]]
+    return parts
+
+
 def paths_in_level(start_tile, end_tile, treeSize, partials=0):
     for i in range(start_tile, min(end_tile, treeSize)):
-        tile_str = str(i).zfill(((len(str(i)) + 2) // 3) * 3)
-        parts = [f"{tile_str[j:j+3]}" for j in range(0, len(tile_str), 3)]
-        parts = [f"/x{x}" for x in parts[:-1]] + [parts[-1]]
+        parts = int_to_parts(i)
         yield "/".join(parts)
     if partials:
-        tile_str = str(treeSize).zfill(((len(str(treeSize)) + 2) // 3) * 3)
-        parts = [f"{tile_str[j:j+3]}" for j in range(0, len(tile_str), 3)]
-        parts = [f"/x{x}" for x in parts[:-1]] + [parts[-1] + f".p/{partials}"]
+        parts = int_to_parts(treeSize)
+        parts[-1] += f".p"
+        parts += [str(partials)]
         yield "/".join(parts)
 
 
@@ -25,10 +30,11 @@ def get_hash_tile_paths(
     startEntry, endEntry, treeSize, levelStart=0, levelEnd=6, partials_req=False
 ):
     for level in range(0, 6):
-        # print(f"start={startEntry} end={endEntry}, treeSize={treeSize}")
+        logging.debug(f"start={startEntry} end={endEntry}, treeSize={treeSize}")
         startEntry //= TILE_SIZE
         endEntry = math.ceil(endEntry / TILE_SIZE)
         partials = (treeSize % TILE_SIZE) if partials_req else 0
+        logging.debug(f"Partials: {partials}")
         treeSize //= TILE_SIZE
         if level >= levelStart and level < levelEnd:
             yield from (

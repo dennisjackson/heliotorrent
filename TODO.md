@@ -7,7 +7,7 @@
 
 * A lot of tidy up and refactoring is needed.
 * make_torrents.py needs a cli.
-* create_rss.py needs to make a feed for each log.
+* create_rss.py needs to make a feed for each log. Probably want a feed for the items vs for the top tree?
 
 ### Automated seeding
 
