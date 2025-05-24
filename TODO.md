@@ -5,8 +5,7 @@
 
 ### Remaining nits with the scripts
 
-* scraper.py needs to fetch the tree size and run dynamically. Support for multiple monitoring prefixes as well? Also need to get the higher hash tiles when they become available later.
-* make_torrents.py needs to avoid recreating existing files. I probably want to split the torrents and feeds by monitoring prefix
+* make_torrents.py needs to package the tiles usefully. Thinking L0 and L1 can live in the leafs. Everything else in its own level file?
 * create_rss.py needs to make a feed for each log.
 
 ### Automated seeding

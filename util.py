@@ -13,14 +13,15 @@ def paths_in_level(start_tile, end_tile, treeSize):
         yield "/".join(parts)
 
 
-def get_hash_tile_paths(startEntry, endEntry, treeSize):
+def get_hash_tile_paths(startEntry, endEntry, treeSize,levelStart=0,levelEnd=6):
     for level in range(0, 6):
         startEntry //= TILE_SIZE
         endEntry = math.ceil(endEntry / TILE_SIZE)
         treeSize //= TILE_SIZE
-        yield from (
-            f"tile/{level}/{x}" for x in paths_in_level(startEntry, endEntry, treeSize)
-        )
+        if level >= levelStart and level < levelEnd:
+            yield from (
+                f"tile/{level}/{x}" for x in paths_in_level(startEntry, endEntry, treeSize)
+            )
 
 
 def get_data_tile_paths(startEntry, endEntry, treeSize, compressed=False):
