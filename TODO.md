@@ -5,7 +5,8 @@
 
 ### Remaining nits with the scripts
 
-* make_torrents.py needs to package the tiles usefully. Thinking L0 and L1 can live in the leafs. Everything else in its own level file?
+* A lot of tidy up and refactoring is needed.
+* make_torrents.py needs a cli.
 * create_rss.py needs to make a feed for each log.
 
 ### Automated seeding

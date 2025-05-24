@@ -28,6 +28,7 @@ def run_wget(output_dir, monitoring_path, tiles):
 
 def scrape_log(log_url, output_dir, max_limit=None):
     tree_size, chkpt = fetch_checkpoint(log_url)
+    save_checkpoint(output_dir, url_to_dir(log_url), tree_size, chkpt)
     logging.info(f"{log_url} has {tree_size} entries")
     if not max_limit:
         max_limit = tree_size

@@ -90,6 +90,43 @@ def get_torrent_path(outdir, monitoring_path, data_tiles, startIndex, stopIndex)
     )
 
 
+def build_torrents(outdir, monitoring_prefix, size):
+    # Data Tiles
+    for i in range(4096 * 256, size, 4096 * 256):
+        start = i - (4096 * 256)
+        end = i
+
+        op = get_torrent_path(outdir, monitoring_prefix, True, start, end)
+
+        if os.path.isfile(op):
+            logging.info(f"{op} already exists")
+            continue
+
+        os.makedirs(os.path.dirname(op), exist_ok=True)
+
+        t = create_torrent(
+            outdir, monitoring_prefix, start, end, True, size, trackers=trackers
+        )
+        if not t:
+            logging.error(f"Error generating torrent file {op}")
+            continue
+        t.generate()
+        t.write(op)
+
+        logging.info(f"Wrote {op} with content size {humanize.naturalsize(t.size)}")
+
+    # Top Tiles
+    op = get_torrent_path("data", p, False, 0, size)
+    if os.path.isfile(op):
+        logging.info(f"{op} already exists")
+        return
+    t = create_torrent("data", p, 0, size, False, size, trackers=trackers)
+    if t:
+        t.generate()
+        t.write(op)
+        logging.info(f"Wrote {op} with content size {humanize.naturalsize(t.size)}")
+
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -99,33 +136,6 @@ logging.info(f"Discovered {len(trackers)} trackers from {TRACKER_LIST_URL}")
 
 LOG_URL = "https://tuscolo2026h1.skylight.geomys.org/"
 p = url_to_dir(LOG_URL)
-size, _ = fetch_checkpoint(LOG_URL)
+size, _ = get_latest_checkpoint("data", p)
 
-
-for i in range(4096 * 256, size, 4096 * 256):
-    start = i - (4096 * 256)
-    end = i
-
-    op = get_torrent_path("data", p, True, start, end)
-
-    if os.path.isfile(op):
-        logging.info(f"{op} already exists")
-        continue
-
-    os.makedirs(os.path.dirname(op), exist_ok=True)
-
-    t = create_torrent("data", p, start, end, True, size, trackers=trackers)
-    if not t:
-        logging.error(f"Error generating torrent file {op}")
-        continue
-    t.generate()
-    t.write(op)
-
-    logging.info(f"Wrote {op} with content size {humanize.naturalsize(t.size)}")
-
-op = get_torrent_path("data", p, False, 0, size)
-t = create_torrent("data", p, 0, size, False, size, trackers=trackers)
-if t:
-    t.generate()
-    t.write(op)
-    logging.info(f"Wrote {op} with content size {humanize.naturalsize(t.size)}")
+build_torrents("data", p, size)
