@@ -9,6 +9,7 @@
 # `x001/x234/067`.
 
 
+import argparse
 import subprocess
 import sys
 from util import *
@@ -46,6 +47,11 @@ def scrape_log(log_url, output_dir, max_limit=None):
     run_wget(output_dir, log_url, [x for x in get_hash_tile_paths(0, limit, tree_size)])
 
 
-# Conver this to a suitable argparse cli ai!
-LOG_URL = "https://tuscolo2026h1.skylight.geomys.org/"
-scrape_log(LOG_URL, 256 * 256 * 4)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Scrape log tiles from a monitoring server")
+    parser.add_argument("log_url", help="URL of the log to scrape")
+    parser.add_argument("output_dir", help="Directory to save scraped files")
+    parser.add_argument("--max-limit", type=int, help="Maximum number of entries to scrape (defaults to tree size)")
+    
+    args = parser.parse_args()
+    scrape_log(args.log_url, args.output_dir, args.max_limit)
