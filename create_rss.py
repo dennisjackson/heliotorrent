@@ -1,9 +1,11 @@
 from feedgen.feed import FeedGenerator
-import glob
+from glob import glob
 import os
 from datetime import datetime, timezone
 import bencodepy
 import hashlib
+from util import *
+import logging
 
 
 def get_torrent_info(tf):
@@ -22,30 +24,44 @@ def get_torrent_info(tf):
     return (infohash, length)
 
 
-fg = FeedGenerator()
-fg.load_extension("torrent")
-fg.title("TODO")
-fg.link(href="https://example.com")
-fg.description("TODO")
-
-for t in glob.glob("data/torrents/*"):
-    print(t)
-    mtime = os.path.getmtime(t)
-    mtime = datetime.fromtimestamp(mtime, tz=timezone.utc)
+def add_item(feed_generator, torrent_path):
+    t = torrent_path
+    logging.debug(f"Adding {t} to torrent")
+    mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
     name = os.path.basename(t).strip(".torrent")
     (ih, size) = get_torrent_info(t)
-    fe = fg.add_item()
+
+    fe = feed_generator.add_item()
     fe.title(name)
     fe.torrent.infohash(ih)
     fe.torrent.contentlength(f"{size}")
     fe.torrent.filename(name)
-    fe.published(mtime)
+    # fe.published(mtime)
     fe.enclosure(
-        url="magnet:?xt=urn:btih:37c2662e6792ccb6fb78ffd4ac9cc035cd26c918",
+        url=f"magnet:?xt=urn:btih:{ih}",
         length=size,
         type="application/x-bittorrent",
     )
 
-rss = fg.rss_str(pretty=True)
-print(rss.decode())
-fg.rss_file("data/feed.xml", pretty=True)
+
+def build_feed(feed_url, name, paths):
+    fg = FeedGenerator()
+    fg.load_extension("torrent")
+    fg.title(name)
+    fg.link(href=feed_url)
+    fg.description("TODO")
+    for p in paths:
+        add_item(fg, p)
+    return fg
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+    name = url_to_dir("https://tuscolo2026h1.skylight.geomys.org/")
+    fg = build_feed("127.0.0.1", name, glob(f"data/{name}/torrents/*"))
+    logging.debug(fg.rss_str(pretty=True).decode())
+
+    fg.rss_file("data/feed.xml", pretty=True)

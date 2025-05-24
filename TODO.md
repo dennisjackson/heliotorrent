@@ -36,7 +36,9 @@ My idea would be to define the URL to be
 Which will then become {monitoring-prefix}/torrent/torrent-name/tile_path
 So the HTTP server needs to rewrite it to {monitoring-prefix}/tile_path
 
-I need to test this though
+I need to test this though.
+
+Can also add http links to the RSS feed to save the magnet lookup
 
 ### Issuers
 
