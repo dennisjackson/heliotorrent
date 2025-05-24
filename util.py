@@ -1,4 +1,5 @@
 import math
+from urllib.parse import urlsplit
 
 TILE_SIZE = 256
 
@@ -21,10 +22,14 @@ def get_hash_tile_paths(startEntry, endEntry, treeSize):
         )
 
 
-def get_data_tile_paths(startEntry, endEntry, treeSize):
+def get_data_tile_paths(startEntry, endEntry, treeSize,compressed=False):
     startEntry //= TILE_SIZE
     endEntry = math.ceil(endEntry / TILE_SIZE)
     treeSize //= TILE_SIZE
+    prefix = "tile/data" if not compressed else "tile/compressed_data"
     yield from (
-        f"tile/data/{x}" for x in paths_in_level(startEntry, endEntry, treeSize)
+        f"{prefix}/{x}" for x in paths_in_level(startEntry, endEntry, treeSize)
     )
+
+def url_to_dir(url):
+    return urlsplit(url).netloc

@@ -36,6 +36,11 @@ def run_wget(output_dir, monitoring_path, tiles):
 
 
 # print([x for x in get_data_tile_paths(0,1024,2048)])
-print([x for x in get_hash_tile_paths(0, 257, 9999 * 256 * 256)])
-# run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(0,10879387,10879387)])
-# run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_hash_tile_paths(0,256*1024,10879387)])
+# print([x for x in get_hash_tile_paths(0, 257, 9999 * 256 * 256)])
+
+LOWER = 0
+UPPER = 4096*256*4
+TREESIZE = 10879387
+
+run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(LOWER,UPPER,TREESIZE)])
+run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_hash_tile_paths(LOWER,UPPER,TREESIZE)])

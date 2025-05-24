@@ -1,8 +1,8 @@
 import urllib.request
-from urllib.parse import urlsplit
 import os
 import time
 import datetime
+from util import *
 
 
 def get_checkpoint(monitoring_prefix):
@@ -13,7 +13,7 @@ def get_checkpoint(monitoring_prefix):
 
 
 log = "https://tuscolo2026h1.skylight.geomys.org/"
-log_dir = urlsplit(log).netloc
+log_dir =
 path = f"data/{log_dir.strip()}/checkpoints"
 os.makedirs(path, exist_ok=True)
 
