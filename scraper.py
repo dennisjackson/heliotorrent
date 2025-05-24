@@ -23,13 +23,14 @@ def run_wget(output_dir, monitoring_path, tiles):
     subprocess.run(command, input="\n".join(tiles).encode(), stdout=sys.stdout,check=True)
 
 def scrape_log(log_url, output_dir, max_limit=None):
-    tree_size, _ = get_checkpoint(log_url)
-    logging.info(f"{log_url} has {tree_size} entries") # Please use a log function not print. ai!
+    tree_size, chkpt = fetch_checkpoint(log_url)
+    logging.info(f"{log_url} has {tree_size} entries")
     if not max_limit:
         max_limit = tree_size
     limit = min(max_limit, tree_size)
     run_wget(output_dir, log_url, [x for x in get_data_tile_paths(0, limit, tree_size)])
     run_wget(output_dir, log_url, [x for x in get_hash_tile_paths(0, limit, tree_size)])
+    run_wget(output_dir, log_url, [x for x in get_hash_tile_paths(0, limit, tree_size,levelStart=2,partials_req=True)])
     logging.info(f"Fetched all tiles up to {limit} for {log_url}")
 
 

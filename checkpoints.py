@@ -5,13 +5,11 @@ from util import *
 
 log = "https://tuscolo2026h1.skylight.geomys.org/"
 log_dir = url_to_dir(log)
-path = f"data/{log_dir.strip()}/checkpoints"
-os.makedirs(path, exist_ok=True)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 while True:
-    size, chkpt = get_checkpoint(log)
-    fp = f"{path}/{size}"
-    with open(fp, "w") as w:
-        w.write(chkpt)
-        print(f"{datetime.datetime.now()} - Wrote checkpoint of size {size} to {fp}")
+    size,chkpt = fetch_checkpoint(log)
+    save_checkpoint('data',log_dir,size,chkpt)
+    logging.info(f"Wrote checkpoint of size {size} to {fp}")
     time.sleep(300)
