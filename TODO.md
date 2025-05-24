@@ -46,11 +46,15 @@ Need to scrape or ask the server CLI to allow listing the files.
 
 Maybe its not even worth doing for now?
 
-## Verification
+### Verification
 
 * Need to verify files on download.
 
-## Compression
+### Compression
 
 Pro: Reduces bandwidth usage
 Downside: Increases storage requirement by 50% for folks actually working with the data. Unless they decompress in memory.
+
+### Convergent Hashes
+
+It would be nice if two different clients generating the torrents would generate the same magnet files.
