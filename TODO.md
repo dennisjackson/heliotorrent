@@ -1,7 +1,31 @@
 
 # TODO
 
-## HTTP Sources
+## Must do
+
+### Remaining nits with the scripts
+
+* scraper.py needs to fetch the tree size and run dynamically. Support for multiple monitoring prefixes as well? Also need to get the higher hash tiles when they become available later.
+* make_torrents.py needs to avoid recreating existing files. I probably want to split the torrents and feeds by monitoring prefix
+* create_rss.py needs to make a feed for each log.
+
+### Automated seeding
+
+I tested that qbittorrent can seed it to transmission-cli running on GCP. It was pretty simple. Just apt-get install. Then run it with the magnet link. It will download the torrent  file. Then run it with the torrent file. transmission-remote is meant to be better.
+
+With qbittorrent I think its even easier. We just need the rules setup with RSS so that it auto-discovers the right folder for seeding,
+
+Easy to serve the RSS feed with python -m http.server 8000 in the data directory.
+
+### Hosting
+
+Host on github pages under a branch.
+Add a html file as a jumping off point for the different RSS feeds and a setup guide.
+For PoC - Just one Let's Encrypt and one Gensys log?
+
+## Nice to have
+
+### HTTP Sources
 
 HTTP Sources for torrents will need to be a spec extension. The main rub is that the torrent client will prefix the fetch with the name of the torrent.
 
@@ -14,19 +38,13 @@ So the HTTP server needs to rewrite it to {monitoring-prefix}/tile_path
 
 I need to test this though
 
-## Issuers
+### Issuers
 
 Need to scrape or ask the server CLI to allow listing the files.
 
-## Checkpoints
+### Checkpoints
 
 Maybe its not even worth doing for now?
-
-## Remaining nits with the scripts
-
-* scraper.py needs to fetch the tree size and run dynamically.
-* make_torrents.py needs to avoid recreating existing files.
-* create_rss.py needs to make folder suitable for serving multiple logs.
 
 ## Verification
 
@@ -36,13 +54,3 @@ Maybe its not even worth doing for now?
 
 Pro: Reduces bandwidth usage
 Downside: Increases storage requirement by 50% for folks actually working with the data. Unless they decompress in memory.
-
-## Automated seeding
-
-I tested that qbittorrent can seed it to transmission-cli running on GCP. It was pretty simple. Just apt-get install. Then run it with the magnet link. It will download the torrent  file. Then run it with the torrent file. transmission-remote is meant to be better.
-
-With qbittorrent I think its even easier. We just need the rules setup with RSS so that it auto-discovers the right folder for seeding,
-
-Easy to serve the RSS feed with python -m http.server 8000 in the data directory.
-
-I probably want to split the torrents and feeds by monitoring prefix
