@@ -34,7 +34,7 @@ def run_wget(output_dir, monitoring_path, tiles):
 
 def scrape_log(log_url, output_dir, max_limit=None):
     tree_size, _ = get_checkpoint(log_url)
-    # Add a log statement here for the tree_size ai!
+    print(f"Found log with tree_size: {tree_size}")
     if not max_limit:
         max_limit = tree_size
     limit = min(max_limit, tree_size)
