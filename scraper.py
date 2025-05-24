@@ -14,9 +14,7 @@ import sys
 from util import *
 
 
-USER_AGENT = (
-    "Experimental CT scraper using wget. Contact: scraper-reports@dennis-jackson.uk"
-)
+USER_AGENT = "Heliotorrent v0.0.0 Contact: scraper-reports@dennis-jackson.uk"
 
 
 def run_wget(output_dir, monitoring_path, tiles):
@@ -38,9 +36,16 @@ def run_wget(output_dir, monitoring_path, tiles):
 # print([x for x in get_data_tile_paths(0,1024,2048)])
 # print([x for x in get_hash_tile_paths(0, 257, 9999 * 256 * 256)])
 
-LOWER = 0
-UPPER = 4096*256*4
-TREESIZE = 10879387
 
-run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(LOWER,TREESIZE,TREESIZE)])
-run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_hash_tile_paths(LOWER,TREESIZE,TREESIZE)])
+def scrape_log(log_url, output_dir, max_limit=None):
+    tree_size, _ = get_checkpoint(log_url)
+    if not max_limit:
+        max_limit = tree_size
+    limit = max(max_limit, tree_size)
+    run_wget(output_dir, log_url, [x for x in get_data_tile_paths(0, limit, tree_size)])
+    run_wget(output_dir, log_url, [x for x in get_hash_tile_paths(0, limit, tree_size)])
+
+
+# Conver this to a suitable argparse cli ai!
+LOG_URL = "https://tuscolo2026h1.skylight.geomys.org/"
+scrape_log(LOG_URL, 256 * 256 * 4)
