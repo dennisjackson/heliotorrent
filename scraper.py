@@ -10,6 +10,7 @@
 
 
 import argparse
+import logging
 import subprocess
 import sys
 from util import *
@@ -43,6 +44,7 @@ def scrape_log(log_url, output_dir, max_limit=None):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     parser = argparse.ArgumentParser(description="Scrape log tiles from a Sunlight server")
     parser.add_argument("log_url", help="URL of the log to scrape")
     parser.add_argument("output_dir", help="Directory to save scraped files")
