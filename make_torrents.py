@@ -46,7 +46,7 @@ t = make_torrent(p,0,4096*256,10879387)
 
 t.generate()
 os.makedirs('data/torrents', exist_ok=True)
-t.write(f'data/torrents/{t.name}')
+t.write(f'data/torrents/{t.name}.torrent')
 
 # TODO - Compression with zstd might offer around a 50% bandwidth saving. (Applied to data tiles)
 
