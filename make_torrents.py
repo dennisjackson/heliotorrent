@@ -48,6 +48,8 @@ t.generate()
 os.makedirs('data/torrents', exist_ok=True)
 t.write(f'data/torrents/{t.name}.torrent')
 
+# TODO - Need to skip if the file already exists.
+
 # TODO - Compression with zstd might offer around a 50% bandwidth saving. (Applied to data tiles)
 
 print(humanize.naturalsize(t.size))

@@ -42,5 +42,5 @@ LOWER = 0
 UPPER = 4096*256*4
 TREESIZE = 10879387
 
-run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(LOWER,UPPER,TREESIZE)])
-run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_hash_tile_paths(LOWER,UPPER,TREESIZE)])
+run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_data_tile_paths(LOWER,TREESIZE,TREESIZE)])
+run_wget('data','https://tuscolo2026h1.skylight.geomys.org/',[x for x in get_hash_tile_paths(LOWER,TREESIZE,TREESIZE)])
