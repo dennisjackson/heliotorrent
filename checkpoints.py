@@ -1,19 +1,10 @@
-import urllib.request
 import os
 import time
 import datetime
 from util import *
 
-
-def get_checkpoint(monitoring_prefix):
-    with urllib.request.urlopen(f"{monitoring_prefix}/checkpoint") as r:
-        chkpt = r.read().decode()
-        size = chkpt.split("\n")[1]
-        return size, chkpt
-
-
 log = "https://tuscolo2026h1.skylight.geomys.org/"
-log_dir =
+log_dir = url_to_dir(log)
 path = f"data/{log_dir.strip()}/checkpoints"
 os.makedirs(path, exist_ok=True)
 
