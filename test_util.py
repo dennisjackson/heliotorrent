@@ -1,8 +1,7 @@
-from util import *
-
+from util import int_to_parts, get_hash_tile_paths
 
 def to_list(l):
-    return [x for x in l]
+    return list(x for x in l)
 
 
 def test_int_to_parts():

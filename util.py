@@ -21,7 +21,7 @@ def paths_in_level(start_tile, end_tile, treeSize, partials=0):
         yield "/".join(parts)
     if partials:
         parts = int_to_parts(treeSize)
-        parts[-1] += f".p"
+        parts[-1] += ".p"
         parts += [str(partials)]
         yield "/".join(parts)
 
