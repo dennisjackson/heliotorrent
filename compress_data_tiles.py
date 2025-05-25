@@ -1,4 +1,4 @@
-from util import *
+from util import url_to_dir,get_data_tile_paths
 import subprocess
 import os
 
