@@ -38,7 +38,7 @@ def get_hash_tile_paths(
         partials = (tree_size % TILE_SIZE) if partials_req else 0
         logging.debug(f"partials={partials}")
         tree_size //= TILE_SIZE
-        if level >= level_start and level < level_end:
+        if level in range(level_start,level_end):
             yield from (
                 f"tile/{level}/{x}"
                 for x in paths_in_level(
@@ -85,6 +85,6 @@ def fetch_checkpoint(monitoring_prefix):
 # TODO: Return path is inconsistent with other functions
 def get_latest_checkpoint(outdir, monitoring_prefix):
     d = get_checkpoint_location(outdir, monitoring_prefix)
-    latest = max([int(os.path.basename(x)) for x in glob(d + "*")])
+    latest = max((int(os.path.basename(x)) for x in glob(d + "*")))
     p = "checkpoints/" + str(latest)
     return (latest, p)
