@@ -1,9 +1,9 @@
 
 # TODO
 
-## Must do
+##  Must do
 
-### Remaining nits with the scripts
+###  Remaining nits with the scripts
 
 * A lot of tidy up and refactoring is needed.
 * make_torrents.py needs a cli.
@@ -26,7 +26,7 @@ For PoC - Just one Let's Encrypt and one Gensys log?
 
 ## Nice to have
 
-### HTTP Sources
+###  HTTP Sources
 
 HTTP Sources for torrents will need to be a spec extension. The main rub is that the torrent client will prefix the fetch with the name of the torrent.
 
@@ -41,11 +41,11 @@ I need to test this though.
 
 Can also add http links to the RSS feed to save the magnet lookup
 
-### Issuers
+###  Issuers
 
 Need to scrape or ask the server CLI to allow listing the files.
 
-### Checkpoints
+###  Checkpoints
 
 Maybe its not even worth doing for now?
 
