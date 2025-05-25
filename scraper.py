@@ -44,7 +44,9 @@ def scrape_log(log_url, output_dir, max_limit=None):
     run_wget(
         output_dir,
         log_url,
-        list(get_hash_tile_paths(0, limit, tree_size, levelStart=2, partials_req=True)),
+        list(
+            get_hash_tile_paths(0, limit, tree_size, level_start=2, partials_req=True)
+        ),
     )
     logging.info(f"Fetched all tiles up to {limit} for {log_url}")
 

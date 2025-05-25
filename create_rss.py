@@ -1,11 +1,12 @@
-from feedgen.feed import FeedGenerator
 from glob import glob
 import os
 from datetime import datetime, timezone
-import bencodepy
 import hashlib
-from util import url_to_dir
 import logging
+
+import bencodepy
+from feedgen.feed import FeedGenerator
+from util import url_to_dir
 
 
 def get_torrent_info(tf):

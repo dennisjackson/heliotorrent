@@ -15,44 +15,46 @@ def int_to_parts(i):
     return parts
 
 
-def paths_in_level(start_tile, end_tile, treeSize, partials=0):
-    for i in range(start_tile, min(end_tile, treeSize)):
+def paths_in_level(start_tile, end_tile, tree_size, partials=0):
+    for i in range(start_tile, min(end_tile, tree_size)):
         parts = int_to_parts(i)
         yield "/".join(parts)
     if partials:
-        parts = int_to_parts(treeSize)
+        parts = int_to_parts(tree_size)
         parts[-1] += ".p"
         parts += [str(partials)]
         yield "/".join(parts)
 
 
 def get_hash_tile_paths(
-    startEntry, endEntry, treeSize, levelStart=0, levelEnd=6, partials_req=False
+    start_entry, end_entry, tree_size, level_start=0, level_end=6, partials_req=False
 ):
     for level in range(0, 6):
         logging.debug(
-            f"level={level} start={startEntry} end={endEntry}, treeSize={treeSize}"
+            f"level={level} start={start_entry} end={end_entry}, tree_size={tree_size}"
         )
-        startEntry //= TILE_SIZE
-        endEntry = math.ceil(endEntry / TILE_SIZE)
-        partials = (treeSize % TILE_SIZE) if partials_req else 0
+        start_entry //= TILE_SIZE
+        end_entry = math.ceil(end_entry / TILE_SIZE)
+        partials = (tree_size % TILE_SIZE) if partials_req else 0
         logging.debug(f"partials={partials}")
-        treeSize //= TILE_SIZE
-        if level >= levelStart and level < levelEnd:
+        tree_size //= TILE_SIZE
+        if level >= level_start and level < level_end:
             yield from (
                 f"tile/{level}/{x}"
                 for x in paths_in_level(
-                    startEntry, endEntry, treeSize, partials=partials
+                    start_entry, end_entry, tree_size, partials=partials
                 )
             )
 
 
-def get_data_tile_paths(startEntry, endEntry, treeSize, compressed=False):
-    startEntry //= TILE_SIZE
-    endEntry = math.ceil(endEntry / TILE_SIZE)
-    treeSize //= TILE_SIZE
+def get_data_tile_paths(start_entry, end_entry, tree_size, compressed=False):
+    start_entry //= TILE_SIZE
+    end_entry = math.ceil(end_entry / TILE_SIZE)
+    tree_size //= TILE_SIZE
     prefix = "tile/data" if not compressed else "tile/compressed_data"
-    yield from (f"{prefix}/{x}" for x in paths_in_level(startEntry, endEntry, treeSize))
+    yield from (
+        f"{prefix}/{x}" for x in paths_in_level(start_entry, end_entry, tree_size)
+    )
 
 
 def url_to_dir(url):

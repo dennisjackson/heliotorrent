@@ -24,9 +24,9 @@ def test_get_hash_tile_paths():
         "tile/0/000",
         "tile/1/000.p/1",
     ]
-    assert to_list(get_hash_tile_paths(0, 256, 256, partials_req=True, levelEnd=1)) == [
-        "tile/0/000"
-    ]
+    assert to_list(
+        get_hash_tile_paths(0, 256, 256, partials_req=True, level_end=1)
+    ) == ["tile/0/000"]
 
 
 print(to_list(get_hash_tile_paths(0, 256, 256, partials_req=True)))
