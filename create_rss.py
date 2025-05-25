@@ -36,7 +36,7 @@ def add_item(feed_generator, torrent_path):
     fe.torrent.infohash(ih)
     fe.torrent.contentlength(f"{size}")
     fe.torrent.filename(name)
-    # fe.published(mtime)
+    fe.published(mtime)
     fe.enclosure(
         url=f"magnet:?xt=urn:btih:{ih}",
         length=size,

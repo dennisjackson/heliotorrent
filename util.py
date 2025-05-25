@@ -30,11 +30,11 @@ def get_hash_tile_paths(
     startEntry, endEntry, treeSize, levelStart=0, levelEnd=6, partials_req=False
 ):
     for level in range(0, 6):
-        logging.debug(f"start={startEntry} end={endEntry}, treeSize={treeSize}")
+        logging.debug(f"level={level} start={startEntry} end={endEntry}, treeSize={treeSize}")
         startEntry //= TILE_SIZE
         endEntry = math.ceil(endEntry / TILE_SIZE)
         partials = (treeSize % TILE_SIZE) if partials_req else 0
-        logging.debug(f"Partials: {partials}")
+        logging.debug(f"partials={partials}")
         treeSize //= TILE_SIZE
         if level >= levelStart and level < levelEnd:
             yield from (
@@ -44,7 +44,6 @@ def get_hash_tile_paths(
                 )
             )
 
-
 def get_data_tile_paths(startEntry, endEntry, treeSize, compressed=False):
     startEntry //= TILE_SIZE
     endEntry = math.ceil(endEntry / TILE_SIZE)
@@ -52,19 +51,11 @@ def get_data_tile_paths(startEntry, endEntry, treeSize, compressed=False):
     prefix = "tile/data" if not compressed else "tile/compressed_data"
     yield from (f"{prefix}/{x}" for x in paths_in_level(startEntry, endEntry, treeSize))
 
-
-# print([x for x in get_data_tile_paths(0,1024,2048)])
-# print([x for x in get_hash_tile_paths(0, 70000, 70000)])
-# print([x for x in get_hash_tile_paths(0, 70000, 70000,partials_req=True)])
-
-
 def url_to_dir(url):
     return urlsplit(url).netloc
 
-
 def get_checkpoint_location(outdir, monitoring_prefix):
     return f"{outdir}/{monitoring_prefix}/checkpoints/"
-
 
 def save_checkpoint(outdir, monitoring_prefix, size, chkpt):
     d = get_checkpoint_location(outdir, monitoring_prefix)
@@ -82,7 +73,7 @@ def fetch_checkpoint(monitoring_prefix):
         logging.debug(f"Fetched checkpoint of size {size} from {monitoring_prefix}")
         return int(size), chkpt
 
-
+# TODO: Return path is inconsistent with other functions
 def get_latest_checkpoint(outdir, monitoring_prefix):
     d = get_checkpoint_location(outdir, monitoring_prefix)
     latest = max([int(os.path.basename(x)) for x in glob(d + "*")])
