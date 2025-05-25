@@ -2,7 +2,13 @@ import argparse
 import logging
 import subprocess
 import sys
-from util import *
+from util import (
+    url_to_dir,
+    fetch_checkpoint,
+    save_checkpoint,
+    get_data_tile_paths,
+    get_hash_tile_paths,
+)
 
 USER_AGENT = "Heliotorrent v0.0.0 Contact: scraper-reports@dennis-jackson.uk"
 
@@ -33,17 +39,12 @@ def scrape_log(log_url, output_dir, max_limit=None):
     if not max_limit:
         max_limit = tree_size
     limit = min(max_limit, tree_size)
-    run_wget(output_dir, log_url, [x for x in get_data_tile_paths(0, limit, tree_size)])
-    run_wget(output_dir, log_url, [x for x in get_hash_tile_paths(0, limit, tree_size)])
+    run_wget(output_dir, log_url, list(get_data_tile_paths(0, limit, tree_size)))
+    run_wget(output_dir, log_url, list(get_hash_tile_paths(0, limit, tree_size)))
     run_wget(
         output_dir,
         log_url,
-        [
-            x
-            for x in get_hash_tile_paths(
-                0, limit, tree_size, levelStart=2, partials_req=True
-            )
-        ],
+        list(get_hash_tile_paths(0, limit, tree_size, levelStart=2, partials_req=True)),
     )
     logging.info(f"Fetched all tiles up to {limit} for {log_url}")
 
