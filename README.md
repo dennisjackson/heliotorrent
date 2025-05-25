@@ -1,3 +1,3 @@
-# Heliotorrent 
+#  Heliotorrent
 
-Serve a Sunlight Transparency log via torrents. 
+Serve a Sunlight Transparency log via torrents.
