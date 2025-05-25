@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timezone
 import bencodepy
 import hashlib
-from util import *
+from util import url_to_dir
 import logging
 
 
@@ -28,14 +28,14 @@ def add_item(feed_generator, torrent_path):
     t = torrent_path
     logging.debug(f"Adding {t} to torrent")
     mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
-    name = os.path.basename(t).strip(".torrent")
+    t_name = os.path.basename(t).strip(".torrent")
     (ih, size) = get_torrent_info(t)
 
     fe = feed_generator.add_item()
-    fe.title(name)
+    fe.title(t_name)
     fe.torrent.infohash(ih)
     fe.torrent.contentlength(f"{size}")
-    fe.torrent.filename(name)
+    fe.torrent.filename(t_name)
     fe.published(mtime)
     fe.enclosure(
         url=f"magnet:?xt=urn:btih:{ih}",
@@ -44,10 +44,10 @@ def add_item(feed_generator, torrent_path):
     )
 
 
-def build_feed(feed_url, name, paths):
+def build_feed(feed_url, feed_name, paths):
     fg = FeedGenerator()
     fg.load_extension("torrent")
-    fg.title(name)
+    fg.title(feed_name)
     fg.link(href=feed_url)
     fg.description("TODO")
     for p in paths:
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     )
 
     name = url_to_dir("https://tuscolo2026h1.skylight.geomys.org/")
-    fg = build_feed("127.0.0.1", name, glob(f"data/{name}/torrents/*"))
-    logging.debug(fg.rss_str(pretty=True).decode())
+    feed = build_feed("127.0.0.1", name, glob(f"data/{name}/torrents/*"))
+    logging.debug(feed.rss_str(pretty=True).decode())
 
-    fg.rss_file("data/feed.xml", pretty=True)
+    feed.rss_file("data/feed.xml", pretty=True)

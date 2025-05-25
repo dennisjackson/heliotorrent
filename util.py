@@ -67,7 +67,7 @@ def save_checkpoint(outdir, monitoring_prefix, size, chkpt):
     d = get_checkpoint_location(outdir, monitoring_prefix)
     os.makedirs(d, exist_ok=True)
     fp = f"{d}/{size}"
-    with open(fp, "w") as w:
+    with open(fp, "w", encoding="utf-8") as w:
         w.write(chkpt)
     logging.debug(f"Wrote checkpoint of size {size} to {fp}")
 
