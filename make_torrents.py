@@ -26,21 +26,19 @@ def get_trackers(url):
 
 def paths_for_datatiles(start_index, stop_index, tree_size):
     paths = []
-    paths += [x for x in get_data_tile_paths(start_index, stop_index, tree_size)]
-    paths += [
-        x
-        for x in get_hash_tile_paths(
+    paths += list(get_data_tile_paths(start_index, stop_index, tree_size))
+    paths += list(
+        get_hash_tile_paths(
             start_index, stop_index, tree_size, level_start=0, level_end=2
         )
-    ]
+    )
     return paths
 
 
 def paths_for_top_tree(start_index, stop_index, tree_size):
     paths = []
-    paths += [
-        x
-        for x in get_hash_tile_paths(
+    paths += list(
+        get_hash_tile_paths(
             start_index,
             stop_index,
             tree_size,
@@ -48,7 +46,7 @@ def paths_for_top_tree(start_index, stop_index, tree_size):
             level_end=6,
             partials_req=True,
         )
-    ]
+    )
     return paths
 
 
