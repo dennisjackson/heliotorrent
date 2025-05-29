@@ -1,9 +1,5 @@
 import math
-from urllib.parse import urlsplit
-import urllib.request
 import logging
-import os
-from glob import glob
 
 TILE_SIZE = 256
 
@@ -38,7 +34,7 @@ def get_hash_tile_paths(
         partials = (tree_size % TILE_SIZE) if partials_req else 0
         logging.debug(f"partials={partials}")
         tree_size //= TILE_SIZE
-        if level in range(level_start,level_end):
+        if level in range(level_start, level_end):
             yield from (
                 f"tile/{level}/{x}"
                 for x in paths_in_level(
@@ -55,36 +51,3 @@ def get_data_tile_paths(start_entry, end_entry, tree_size, compressed=False):
     yield from (
         f"{prefix}/{x}" for x in paths_in_level(start_entry, end_entry, tree_size)
     )
-
-
-def url_to_dir(url):
-    return urlsplit(url).netloc
-
-
-def get_checkpoint_location(outdir, monitoring_prefix):
-    return f"{outdir}/{monitoring_prefix}/checkpoints/"
-
-
-def save_checkpoint(outdir, monitoring_prefix, size, chkpt):
-    d = get_checkpoint_location(outdir, monitoring_prefix)
-    os.makedirs(d, exist_ok=True)
-    fp = f"{d}/{size}"
-    with open(fp, "w", encoding="utf-8") as w:
-        w.write(chkpt)
-    logging.debug(f"Wrote checkpoint of size {size} to {fp}")
-
-
-def fetch_checkpoint(monitoring_prefix):
-    with urllib.request.urlopen(f"{monitoring_prefix}/checkpoint") as r:
-        chkpt = r.read().decode()
-        size = chkpt.split("\n")[1]
-        logging.debug(f"Fetched checkpoint of size {size} from {monitoring_prefix}")
-        return int(size), chkpt
-
-
-# TODO: Return path is inconsistent with other functions
-def get_latest_checkpoint(outdir, monitoring_prefix):
-    d = get_checkpoint_location(outdir, monitoring_prefix)
-    latest = max((int(os.path.basename(x)) for x in glob(d + "*")))
-    p = "checkpoints/" + str(latest)
-    return (latest, p)

@@ -10,7 +10,7 @@ if __name__ == "__main__":
         description="Scrape log tiles from a Sunlight server"
     )
     parser.add_argument("log_url", help="URL of the log to scrape")
-    parser.add_argument("--out", help="Directory to save scraped files",default='data')
+    parser.add_argument("--out", help="Directory to save scraped files", default="data")
 
     args = parser.parse_args()
     tl = TileLog(args.log_url, args.out)
@@ -19,4 +19,3 @@ if __name__ == "__main__":
 
 # Example:
 # python create_rss.py https://tuscolo2026h1.skylight.geomys.org/ data/
-
