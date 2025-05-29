@@ -18,4 +18,4 @@ if __name__ == "__main__":
 
 
 # Example:
-# python scraper.py https://tuscolo2026h1.skylight.geomys.org/ data/ --max-limit 1024
+# python scraper.py https://tuscolo2026h1.skylight.geomys.org/ data/
