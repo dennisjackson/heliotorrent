@@ -39,7 +39,7 @@ So the HTTP server needs to rewrite it to {monitoring-prefix}/tile_path
 
 I need to test this though.
 
-Can also add http links to the RSS feed to save the magnet lookup
+Can also add http links to the RSS feed to save the magnet lookup (and serve the raw torrent files)
 
 ###  Issuers
 
@@ -61,3 +61,8 @@ Downside: Increases storage requirement by 50% for folks actually working with t
 ### Convergent Hashes
 
 It would be nice if two different clients generating the torrents would generate the same magnet files.
+I think this is possible for data tiles.
+
+### Hybrid Torrents
+
+Support v2 and v1 Torrents. Sounds like torrent-file rather than torf might be the way to go.

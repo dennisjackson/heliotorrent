@@ -144,15 +144,16 @@ def build_torrents(outdir, monitoring_prefix, size):
         logging.info(f"Wrote {op} with content size {humanize.naturalsize(t.size)}")
 
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
-good_trackers = get_trackers(TRACKER_LIST_URL)
-logging.info(f"Discovered {len(good_trackers)} trackers from {TRACKER_LIST_URL}")
+    good_trackers = get_trackers(TRACKER_LIST_URL)
+    logging.info(f"Discovered {len(good_trackers)} trackers from {TRACKER_LIST_URL}")
 
-LOG_URL = "https://tuscolo2026h1.skylight.geomys.org/"
-log_dir = url_to_dir(LOG_URL)
-latest_size, _ = get_latest_checkpoint("data", log_dir)
+    LOG_URL = "https://tuscolo2026h1.skylight.geomys.org/"
+    log_dir = url_to_dir(LOG_URL)
+    latest_size, _ = get_latest_checkpoint("data", log_dir)
 
-build_torrents("data", log_dir, latest_size)
+    build_torrents("data", log_dir, latest_size)
