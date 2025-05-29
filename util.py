@@ -33,13 +33,9 @@ def get_hash_tile_paths(
     start_entry, end_entry, tree_size, level_start=0, level_end=6, partials_req=False
 ):
     for level in range(0, 6):
-        logging.debug(
-            f"level={level} start={start_entry} end={end_entry}, tree_size={tree_size}"
-        )
         start_entry //= TILE_SIZE
         end_entry = math.ceil(end_entry / TILE_SIZE)
         partials = (tree_size % TILE_SIZE) if partials_req else 0
-        logging.debug(f"partials={partials}")
         tree_size //= TILE_SIZE
         if level in range(level_start, level_end):
             yield from (
@@ -68,7 +64,7 @@ def create_torrent_file(name, author, paths, trackers, out_path):
         creation_date=datetime.now(),
     )
     if os.path.isfile(out_path):
-        logging.info(f"{out_path} already exists")
+        logging.debug(f"{out_path} already exists")
         return
     if not all(os.path.exists(p) for p in paths):
         for p in paths:

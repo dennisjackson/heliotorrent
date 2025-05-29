@@ -36,7 +36,7 @@ class TileLog:
         self.max_size = max_size
         with urllib.request.urlopen(TRACKER_LIST_URL) as r:
             self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
-            logging.info(
+            logging.debug(
                 f"Discovered {len(self.trackers)} trackers from {TRACKER_LIST_URL}"
             )
 
@@ -91,7 +91,7 @@ class TileLog:
             with urllib.request.urlopen(f"{self.url}/checkpoint") as r:
                 chkpt = r.read().decode()
                 size = chkpt.split("\n")[1]
-                logging.debug(f"Fetched checkpoint of size {size} from {self.url}")
+                logging.info(f"Fetched checkpoint of size {size} from {self.url}")
             with open(f"{self.checkpoints}/{size}", "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(
@@ -101,7 +101,7 @@ class TileLog:
         return latest, p
 
     def download_tiles(self):
-        size = self.__get_latest_checkpoint(refresh=True)[0]
+        size = self.__get_latest_tree_size(refresh=True)
         command = [
             "wget",
             "--input-file=-",
@@ -117,13 +117,15 @@ class TileLog:
             "--no-verbose",
             f"--user-agent={USER_AGENT}",
         ]
+        tiles = self.__get_all_tile_paths()
+        logging.debug(f"Identified {len(tiles)} tiles to scrape")
         subprocess.run(
             command,
-            input="\n".join(self.__get_all_tile_paths()).encode(),
+            input="\n".join(tiles).encode(),
             stdout=sys.stdout,
             check=True,
         )
-        logging.info(f"Fetched all tiles up to {size} for {self.log_name}")
+        logging.info(f"Fetched all {len(tiles)} tiles up to entry {size} for {self.log_name}")
 
     # Functions for creating torrent files
 
@@ -149,9 +151,8 @@ class TileLog:
         tp = f"{self.torrents}/L2345-0-{size}.torrent"
         if self.max_size:
             logging.warning(
-                "max_size is set, so checkpoint in torrent may not be verifiable"
+                "max_size is set, so upper tree torrent may be misisng files"
             )
-            logging.warning("Partial tiles are likely missing")
         create_torrent_file(name, "HelioTorrent " + VERSION, paths, self.trackers, tp)
 
     # Functions specific to creating RSS feeds
