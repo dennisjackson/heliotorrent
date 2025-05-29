@@ -1,5 +1,12 @@
 import math
 import logging
+import hashlib
+import os
+from datetime import datetime
+
+from torf import Torrent
+import humanize
+import bencodepy
 
 TILE_SIZE = 256
 
@@ -51,3 +58,42 @@ def get_data_tile_paths(start_entry, end_entry, tree_size, compressed=False):
     yield from (
         f"{prefix}/{x}" for x in paths_in_level(start_entry, end_entry, tree_size)
     )
+
+
+def create_torrent_file(name, author, paths, trackers, out_path):
+    t = Torrent(
+        trackers=trackers,
+        private=False,
+        created_by=author,
+        creation_date=datetime.now(),
+    )
+    if os.path.isfile(out_path):
+        logging.info(f"{out_path} already exists")
+        return
+    if not all(os.path.exists(p) for p in paths):
+        for p in paths:
+            if not os.path.exists(p):
+                logging.info(f"Missing file: {p}")
+        logging.error(f"Missing files for torrent {name}")
+        return
+    t.filepaths = paths
+    t.name = name
+    t.generate()
+    t.write(out_path)
+    logging.info(f"Wrote {out_path} with content size {humanize.naturalsize(t.size)}")
+
+
+def get_torrent_file_info(tf):
+    with open(tf, "rb") as f:
+        meta = bencodepy.decode(f.read())
+
+    info = meta[b"info"]
+    info_encoded = bencodepy.encode(info)
+    infohash = hashlib.sha1(info_encoded).hexdigest()
+
+    length = 0
+    if b"files" in info:  # multi-file
+        length = sum(f[b"length"] for f in info[b"files"])
+    else:  # single-file
+        length = info[b"length"]
+    return (infohash, length)

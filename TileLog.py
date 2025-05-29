@@ -6,17 +6,15 @@ import os
 import subprocess
 import sys
 from datetime import datetime, timezone
-import hashlib
 
-from torf import Torrent
-import humanize
-import bencodepy
 
 from feedgen.feed import FeedGenerator
 
 from util import (
     get_data_tile_paths,
     get_hash_tile_paths,
+    create_torrent_file,
+    get_torrent_file_info,
 )
 
 VERSION = "v0.0.0"
@@ -129,30 +127,6 @@ class TileLog:
 
     # Functions for creating torrent files
 
-    def __create_torrent_file(self, name, paths, trackers, out_path):
-        t = Torrent(
-            trackers=trackers,
-            private=False,
-            created_by="HelioTorrent " + VERSION,
-            creation_date=datetime.now(),
-        )
-        if os.path.isfile(out_path):
-            logging.info(f"{out_path} already exists")
-            return
-        if not all(os.path.exists(p) for p in paths):
-            for p in paths:
-                if not os.path.exists(p):
-                    logging.info(f"Missing file: {p}")
-            logging.error(f"Missing files for torrent {name}")
-            return
-        t.filepaths = paths
-        t.name = name
-        t.generate()
-        t.write(out_path)
-        logging.info(
-            f"Wrote {out_path} with content size {humanize.naturalsize(t.size)}"
-        )
-
     def make_torrents(self):
         size = self.__get_latest_tree_size()
         for i in range(TORRENT_SIZE, size, TORRENT_SIZE):
@@ -164,7 +138,9 @@ class TileLog:
                 start_index=startIndex, stop_index=endIndex
             )
             paths = [f"{self.storage}/{x}" for x in paths]
-            self.__create_torrent_file(name, paths, self.trackers, tp)
+            create_torrent_file(
+                name, "HelioTorrent " + VERSION, paths, self.trackers, tp
+            )
 
         name = f"{self.log_name}-L2345-0-{size}.torrent"
         paths = self.__get_upper_tree_tile_paths(0, size)
@@ -176,30 +152,15 @@ class TileLog:
                 "max_size is set, so checkpoint in torrent may not be verifiable"
             )
             logging.warning("Partial tiles are likely missing")
-        self.__create_torrent_file(name, paths, self.trackers, tp)
+        create_torrent_file(name, "HelioTorrent " + VERSION, paths, self.trackers, tp)
 
     # Functions specific to creating RSS feeds
-
-    def __get_torrent_file_info(self, tf):
-        with open(tf, "rb") as f:
-            meta = bencodepy.decode(f.read())
-
-        info = meta[b"info"]
-        info_encoded = bencodepy.encode(info)
-        infohash = hashlib.sha1(info_encoded).hexdigest()
-
-        length = 0
-        if b"files" in info:  # multi-file
-            length = sum(f[b"length"] for f in info[b"files"])
-        else:  # single-file
-            length = info[b"length"]
-        return (infohash, length)
 
     def add_torrent_to_feed(self, feed_generator, t):
         logging.debug(f"Adding {t} to feed")
         mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
         t_name = os.path.basename(t).strip(".torrent")
-        (ih, size) = self.__get_torrent_file_info(t)
+        (ih, size) = get_torrent_file_info(t)
 
         fe = feed_generator.add_item()
         fe.title(t_name)
