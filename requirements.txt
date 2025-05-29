@@ -2,3 +2,4 @@ bencodepy
 feedgen
 humanize
 torf
+coloredlogs
