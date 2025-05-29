@@ -34,6 +34,8 @@ class TileLog:
         self.torrents = self.storage + "/torrents"
         self.tiles = self.storage + "/tile"
         self.max_size = max_size
+        if max_size:
+            logging.warning(f"Running TileLog with maximum entry limit of {self.max_size}")
         with urllib.request.urlopen(TRACKER_LIST_URL) as r:
             self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
             logging.debug(
