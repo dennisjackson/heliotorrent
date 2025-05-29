@@ -1,5 +1,4 @@
 from util import url_to_dir, get_data_tile_paths, get_hash_tile_paths, get_latest_checkpoint,fetch_checkpoint,save_checkpoint
-from create_rss import build_feed
 from glob import glob
 import logging
 import urllib.request
@@ -7,9 +6,12 @@ from urllib.parse import urlsplit
 import os
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from torf import Torrent
 import humanize
+import bencodepy
+import hashlib
+from feedgen.feed import FeedGenerator
 
 VERSION = "v0.0.0"
 USER_AGENT = f"Heliotorrent {VERSION} Contact: scraper-reports@dennis-jackson.uk"
@@ -62,7 +64,13 @@ class TileLog:
         return paths
 
     def __get_latest_tree_size(self,refresh=False):
-        return min(self.__get_latest_checkpoint(refresh=refresh)[0],self.max_size)
+        size = self.__get_latest_checkpoint(refresh=refresh)[0]
+        if self.max_size:
+            return min(size,self.max_size)
+        else:
+            return size
+
+    # Functions for scraping logs
 
     def __get_latest_checkpoint(self,refresh=False):
         if refresh:
@@ -99,6 +107,7 @@ class TileLog:
     )
         logging.info(f"Fetched all tiles up to {limit} for {log_url}")
 
+    # Functions for creating torrent files
 
     def __create_torrent_file(self,name,paths,trackers,out_path):
         t = Torrent(
@@ -145,6 +154,50 @@ class TileLog:
             logging.warning("Partial tiles are likely missing")
         self.__create_torrent_file(name,paths,self.trackers,tp)
 
+    # Functions specific to creating RSS feeds
+
+    def __get_torrent_file_info(self,tf):
+        with open(tf, "rb") as f:
+            meta = bencodepy.decode(f.read())
+
+        info = meta[b"info"]
+        info_encoded = bencodepy.encode(info)
+        infohash = hashlib.sha1(info_encoded).hexdigest()
+
+        length = 0
+        if b"files" in info:  # multi-file
+            length = sum(f[b"length"] for f in info[b"files"])
+        else:  # single-file
+            length = info[b"length"]
+        return (infohash, length)
+
+    def add_torrent_to_feed(self,feed_generator, t):
+        logging.debug(f"Adding {t} to feed")
+        mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
+        t_name = os.path.basename(t).strip(".torrent")
+        (ih, size) = self.__get_torrent_file_info(t)
+
+        fe = feed_generator.add_item()
+        fe.title(t_name)
+        fe.torrent.infohash(ih)
+        fe.torrent.contentlength(f"{size}")
+        fe.torrent.filename(t_name)
+        fe.published(mtime)
+        fe.enclosure(
+            url=f"magnet:?xt=urn:btih:{ih}",
+            length=size,
+            type="application/x-bittorrent",
+        )
+
     def make_rss_feed(self,feed_url):
-        fg = build_feed(feed_url,self.url,glob(f'{self.torrents}'))
-        fg.rss_file(f"{self.torrents}/feed.xml",pretty=True)
+        fg = FeedGenerator()
+        fg.load_extension("torrent")
+        fg.title(self.log_name)
+        fg.link(href=feed_url)
+        fg.description("TODO")
+        paths = glob(self.torrents+'/*.torrent')
+        for p in paths:
+            self.add_torrent_to_feed(fg, p)
+        fp = f"{self.torrents}/feed.xml"
+        fg.rss_file(fp,pretty=True)
+        logging.info(f"Wrote {fp} with {len(paths)} torrent files")
