@@ -178,9 +178,14 @@ class TileLog:
         fe.torrent.contentlength(f"{size}")
         fe.torrent.filename(t_name)
         fe.published(mtime)
+        # fe.enclosure(
+        #     url=f"magnet:?xt=urn:btih:{ih}",
+        #     length=size,
+        #     type="application/x-bittorrent",
+        # )
         fe.enclosure(
-            url=f"magnet:?xt=urn:btih:{ih}",
-            length=size,
+            url=f"http://host.docker.internal:8000/tuscolo2026h1.skylight.geomys.org/torrents/{t_name}.torrent",
+            length=size, #todo should be size of file
             type="application/x-bittorrent",
         )
 
