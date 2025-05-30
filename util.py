@@ -4,10 +4,12 @@ import hashlib
 import os
 from datetime import datetime
 import sys
+import subprocess
 
 from torf import Torrent
 import humanize
 import bencodepy
+
 
 TILE_SIZE = 256
 
@@ -100,3 +102,12 @@ def get_torrent_file_info(tf):
     else:  # single-file
         length = info[b"length"]
     return (infohash, length)
+
+def run_scraper(paired_input):
+    command, input_list = paired_input
+    subprocess.run(
+        command,
+        input="\n".join(input_list).encode(),
+        stdout=sys.stdout,
+        check=True,
+    )

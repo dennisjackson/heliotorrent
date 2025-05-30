@@ -3,9 +3,10 @@ import logging
 import urllib.request
 from urllib.parse import urlsplit
 import os
-import subprocess
-import sys
+from concurrent.futures import ThreadPoolExecutor
+import math
 from datetime import datetime, timezone
+import random
 
 
 from feedgen.feed import FeedGenerator
@@ -15,6 +16,7 @@ from util import (
     get_hash_tile_paths,
     create_torrent_file,
     get_torrent_file_info,
+    run_scraper,
 )
 
 VERSION = "v0.0.0"
@@ -123,13 +125,16 @@ class TileLog:
             f"--user-agent={USER_AGENT}",
         ]
         tiles = self.__get_all_tile_paths()
+        random.shuffle(tiles) # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {len(tiles)} tiles to scrape")
-        subprocess.run(
-            command,
-            input="\n".join(tiles).encode(),
-            stdout=sys.stdout,
-            check=True,
-        )
+
+        # We run 4 scrapers in parallel. Each scrape has at most one request in flight at a time.
+        # Each scraper also supports a backoff.
+        chunk_size = math.ceil(len(tiles) / 4)
+        chunks = [(command, tiles[i:i + chunk_size]) for i in range(0, len(tiles), chunk_size)]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            executor.map(run_scraper, chunks)
+
         logging.info(
             f"Fetched all {len(tiles)} tiles up to entry {size} for {self.log_name}"
         )
