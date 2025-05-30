@@ -4,10 +4,10 @@
 ##  Must do
 
 * Ok so a duct taped solution is now together:
-* I think the goal is going to be to have an initial feed which is torrents
-* Plus a feed which is magnets?
 * Now the qbittorrent config needs all wrapping up together.
 * Plus a caddy webserver to serve it all
+* Possible BUG where the upper tree tiles are not being recognized in qbittorrent. Not sure why.
+* qBittorrent config will need the seeding limit turned off as well (already done via GUI)
 
 ### Automated seeding
 

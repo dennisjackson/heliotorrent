@@ -132,6 +132,7 @@ class TileLog:
         # Each scraper also supports a backoff.
         chunk_size = math.ceil(len(tiles) / 4)
         chunks = [(command, tiles[i:i + chunk_size]) for i in range(0, len(tiles), chunk_size)]
+        # TODO Is there a remainder missing here?
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.map(run_scraper, chunks)
 
