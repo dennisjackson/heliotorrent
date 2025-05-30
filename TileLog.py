@@ -35,7 +35,9 @@ class TileLog:
         self.tiles = self.storage + "/tile"
         self.max_size = max_size
         if max_size:
-            logging.warning(f"Running TileLog with maximum entry limit of {self.max_size}")
+            logging.warning(
+                f"Running TileLog with maximum entry limit of {self.max_size}"
+            )
         with urllib.request.urlopen(TRACKER_LIST_URL) as r:
             self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
             logging.debug(
@@ -127,7 +129,9 @@ class TileLog:
             stdout=sys.stdout,
             check=True,
         )
-        logging.info(f"Fetched all {len(tiles)} tiles up to entry {size} for {self.log_name}")
+        logging.info(
+            f"Fetched all {len(tiles)} tiles up to entry {size} for {self.log_name}"
+        )
 
     # Functions for creating torrent files
 
