@@ -3,12 +3,15 @@
 
 ##  Must do
 
-###  Remaining nits with the scripts
-
-* A lot of tidy up and refactoring is needed.
-* make_torrents.py needs a cli.
-* create_rss.py needs to make a feed for each log. Probably want a feed for the items vs for the top tree?
-* How to handle issuers?
+* started experiment with qbittorrent for automated seeding.
+* The docker setup works pretty well.
+* Testing with file watch - it adds them fine and discovers the content
+* However it deletes the torrent files once added. BUG 1.
+* Also it sets the path wrong and omits the tile subfolder.
+* This means that the upper-tree tiles don't get seeded. BUG 2
+  * I guess a hacky fix would be to watch from a different folder and put them in a different location
+* Then this script needs dockerizing.
+* Then instructions need writing.
 
 ### Automated seeding
 
