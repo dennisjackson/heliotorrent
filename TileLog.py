@@ -191,6 +191,7 @@ class TileLog:
         fg.title(self.log_name)
         fg.link(href=feed_url)
         fg.description("TODO")
+        #TODO Make different feeds for data level, tile and both?
         paths = glob(self.torrents + "/*.torrent")
         for p in paths:
             self.add_torrent_to_feed(fg, p)

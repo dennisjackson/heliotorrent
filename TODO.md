@@ -7,9 +7,13 @@
 * The docker setup works pretty well.
 * Testing with file watch - it adds them fine and discovers the content
 * However it deletes the torrent files once added. BUG 1.
+  * Looks like this is automatic.
+  * So I guess go with the RSS option!
+  * It would be good to split out the RSS feed into channels?
 * Also it sets the path wrong and omits the tile subfolder.
 * This means that the upper-tree tiles don't get seeded. BUG 2
   * I guess a hacky fix would be to watch from a different folder and put them in a different location
+  * This has been fixed by including a README at the top directory
 * Then this script needs dockerizing.
 * Then instructions need writing.
 
