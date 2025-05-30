@@ -29,6 +29,8 @@ For PoC - Just one Let's Encrypt and one Gensys log?
 
 ## Nice to have
 
+* Fix all the path joins!
+
 ###  HTTP Sources
 
 HTTP Sources for torrents will need to be a spec extension. The main rub is that the torrent client will prefix the fetch with the name of the torrent.
