@@ -3,6 +3,7 @@ import logging
 import hashlib
 import os
 from datetime import datetime
+import sys
 
 from torf import Torrent
 import humanize
@@ -56,6 +57,11 @@ def get_data_tile_paths(start_entry, end_entry, tree_size, compressed=False):
     )
 
 
+def show_progress(torrent,stage, current, total):
+    percent = (current / total) * 100
+    print(f"Building {torrent.name}: {percent:.2f}% ({current}/{total})", end='\r', flush=True)
+    sys.stdout.flush()
+
 def create_torrent_file(name, author, paths, trackers, out_path):
     t = Torrent(
         trackers=trackers,
@@ -74,7 +80,8 @@ def create_torrent_file(name, author, paths, trackers, out_path):
         return
     t.filepaths = paths
     t.name = name
-    t.generate()
+    t.generate(callback=show_progress,interval=0.1)
+    print('\r',end='')
     t.write(out_path)
     logging.info(f"Wrote {out_path} with content size {humanize.naturalsize(t.size)}")
 

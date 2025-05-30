@@ -42,4 +42,4 @@ if __name__ == "__main__":
 
 
 # Example:
-# python make_torrents.py https://tuscolo2026h1.skylight.geomys.org/ data/
+# ./heliotorrent.py https://tuscolo2026h1.skylight.geomys.org/ data/

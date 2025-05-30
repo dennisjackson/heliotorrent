@@ -34,6 +34,7 @@ class TileLog:
         self.torrents = self.storage + "/torrents"
         self.tiles = self.storage + "/tile"
         self.max_size = max_size
+        #TODO - Create a readme file here
         if max_size:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
@@ -146,6 +147,7 @@ class TileLog:
                 start_index=startIndex, stop_index=endIndex
             )
             paths = [f"{self.storage}/{x}" for x in paths]
+            paths += [f"{self.storage}/README.md"]
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
@@ -154,6 +156,7 @@ class TileLog:
         paths = self.__get_upper_tree_tile_paths(0, size)
         paths = [f"{self.storage}/{x}" for x in paths]
         paths += [self.__get_latest_checkpoint()[1]]
+        paths += [f"{self.storage}/README.md"]
         tp = f"{self.torrents}/L2345-0-{size}.torrent"
         if self.max_size:
             logging.warning(
@@ -182,6 +185,7 @@ class TileLog:
         )
 
     def make_rss_feed(self, feed_url):
+        #TODO: Make an index.html file in a new function?
         fg = FeedGenerator()
         fg.load_extension("torrent")
         fg.title(self.log_name)
