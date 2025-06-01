@@ -5,9 +5,14 @@
 
 * Ok so a duct taped solution is now together:
 * Now the qbittorrent config needs all wrapping up together.
-* Plus a caddy webserver to serve it all
+* Plus a caddy webserver to serve it all.
+  * Maybe having a public feed folder with magnet links and a private folder served locally would be the best way.
 * Possible BUG where the upper tree tiles are not being recognized in qbittorrent. Not sure why.
 * qBittorrent config will need the seeding limit turned off as well (already done via GUI)
+* I think the qbittorrent config is actually trivial. It's just a case of packaging the config files which are plaintext anyway.
+  * The rules and rss feed need transforming, but that should be pretty smooth anyway.
+  * Might need to check about editing the config whilst its running though!
+  * So maybe a different command?
 
 ### Automated seeding
 
@@ -26,6 +31,8 @@ For PoC - Just one Let's Encrypt and one Gensys log?
 ## Nice to have
 
 * Fix all the path joins!
+* Error handling, catch exceptions
+* Don't generate top level torrents if the last one isn't at least X old / X entries old.
 
 ###  HTTP Sources
 

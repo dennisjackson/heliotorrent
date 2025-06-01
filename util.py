@@ -90,7 +90,11 @@ def create_torrent_file(name, author, paths, trackers, out_path):
 
 def get_torrent_file_info(tf):
     with open(tf, "rb") as f:
-        meta = bencodepy.decode(f.read())
+        try:
+            meta = bencodepy.decode(f.read())
+        except bencodepy.DecodingError as e:
+            logging.error(f"Error decoding {tf}", exc_info=e)
+            return None
 
     info = meta[b"info"]
     info_encoded = bencodepy.encode(info)
@@ -105,9 +109,12 @@ def get_torrent_file_info(tf):
 
 def run_scraper(paired_input):
     command, input_list = paired_input
-    subprocess.run(
-        command,
-        input="\n".join(input_list).encode(),
-        stdout=sys.stdout,
-        check=True,
-    )
+    try:
+        subprocess.run(
+            command,
+            input="\n".join(input_list).encode(),
+            stdout=sys.stdout,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error running {command}", exc_info=e)
