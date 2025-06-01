@@ -59,10 +59,15 @@ def get_data_tile_paths(start_entry, end_entry, tree_size, compressed=False):
     )
 
 
-def show_progress(torrent,stage, current, total):
+def show_progress(torrent, stage, current, total):
     percent = (current / total) * 100
-    print(f"Building {torrent.name}: {percent:.2f}% ({current}/{total})", end='\r', flush=True)
+    print(
+        f"Building {torrent.name}: {percent:.2f}% ({current}/{total})",
+        end="\r",
+        flush=True,
+    )
     sys.stdout.flush()
+
 
 def create_torrent_file(name, author, paths, trackers, out_path):
     t = Torrent(
@@ -82,8 +87,8 @@ def create_torrent_file(name, author, paths, trackers, out_path):
         return
     t.filepaths = paths
     t.name = name
-    t.generate(callback=show_progress,interval=0.1)
-    print('\r',end='')
+    t.generate(callback=show_progress, interval=0.1)
+    print("\r", end="")
     t.write(out_path)
     logging.info(f"Wrote {out_path} with content size {humanize.naturalsize(t.size)}")
 
@@ -106,6 +111,7 @@ def get_torrent_file_info(tf):
     else:  # single-file
         length = info[b"length"]
     return (infohash, length)
+
 
 def run_scraper(paired_input):
     command, input_list = paired_input

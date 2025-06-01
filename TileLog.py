@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 import math
 from datetime import datetime, timezone
 import random
-
+import time
+import re
 
 from feedgen.feed import FeedGenerator
 
@@ -21,7 +22,7 @@ from util import (
 
 VERSION = "v0.0.0"
 USER_AGENT = f"Heliotorrent {VERSION} Contact: scraper-reports@dennis-jackson.uk"
-TORRENT_SIZE = 4096 * 256  # 4096 tiles per torrent
+TILES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
 TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
@@ -36,7 +37,7 @@ class TileLog:
         self.torrents = self.storage + "/torrents"
         self.tiles = self.storage + "/tile"
         self.max_size = max_size
-        #TODO - Create a readme file here
+        # TODO - Create a readme file here
         if max_size:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
@@ -125,14 +126,17 @@ class TileLog:
             f"--user-agent={USER_AGENT}",
         ]
         tiles = self.__get_all_tile_paths()
-        random.shuffle(tiles) # Shuffling ensures each worker gets a balanced load
+        random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {len(tiles)} tiles to scrape")
 
-        # We run 4 scrapers in parallel. Each scrape has at most one request in flight at a time.
+        # We run 4 scrapers in parallel. Each scrape has at most one request in flight at a time.
         # Each scraper also supports a backoff.
         chunk_size = math.ceil(len(tiles) / 4)
-        chunks = [(command, tiles[i:i + chunk_size]) for i in range(0, len(tiles), chunk_size)]
-        # TODO Is there a remainder missing here?
+        chunks = [
+            (command, tiles[i : i + chunk_size])
+            for i in range(0, len(tiles), chunk_size)
+        ]
+        # TODO Is there a remainder missing here?
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.map(run_scraper, chunks)
 
@@ -142,10 +146,32 @@ class TileLog:
 
     # Functions for creating torrent files
 
+    def __should_generate_new_upper_torrent(self, current_checkpoint):
+        torrents = glob("f{self.torrents}/{self.log_name}-L2345-0-[0-9]*.torrent")
+        last_modified = max(torrents, key=os.path.getmtime)
+        if time.time() - last_modified < 6 * 60 * 60:
+            logging.debug(
+                f"Not generating a new upper tree torrent, last modified too recent {last_modified}"
+            )
+            return False
+        last_checkpoint_size = max(
+            [int(re.search(r"-(\d+)\.torrent$", p)) for p in torrents], default=0
+        )
+        if (
+            current_checkpoint // TILES_PER_LEAF_TORRENT
+            - last_checkpoint_size // TILES_PER_LEAF_TORRENT
+            > 0
+        ):
+            return True
+        logging.debug(
+            f"Not generating a new upper tree torrent, no new leaf torrents. new:{current_checkpoint}, old:{last_checkpoint_size}"
+        )
+        return False
+
     def make_torrents(self):
         size = self.__get_latest_tree_size()
-        for i in range(TORRENT_SIZE, size, TORRENT_SIZE):
-            startIndex = i - TORRENT_SIZE
+        for i in range(TILES_PER_LEAF_TORRENT, size, TILES_PER_LEAF_TORRENT):
+            startIndex = i - TILES_PER_LEAF_TORRENT
             endIndex = i
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = f"{self.torrents}/L01-{startIndex}-{endIndex}.torrent"
@@ -157,18 +183,20 @@ class TileLog:
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
-
-        name = f"{self.log_name}-L2345-0-{size}.torrent"
-        paths = self.__get_upper_tree_tile_paths(0, size)
-        paths = [f"{self.storage}/{x}" for x in paths]
-        paths += [self.__get_latest_checkpoint()[1]]
-        paths += [f"{self.storage}/README.md"]
-        tp = f"{self.torrents}/L2345-0-{size}.torrent"
-        if self.max_size:
-            logging.warning(
-                "max_size is set, so upper tree torrent may be misisng files"
+        if self.__should_generate_new_upper_torrent(size):
+            name = f"{self.log_name}-L2345-0-{size}.torrent"
+            paths = self.__get_upper_tree_tile_paths(0, size)
+            paths = [f"{self.storage}/{x}" for x in paths]
+            paths += [self.__get_latest_checkpoint()[1]]
+            paths += [f"{self.storage}/README.md"] #TODO needs creating
+            tp = f"{self.torrents}/L2345-0-{size}.torrent"
+            if self.max_size:
+                logging.warning(
+                    "max_size is set, so upper tree torrent may be misisng files"
+                )
+            create_torrent_file(
+                name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
-        create_torrent_file(name, "HelioTorrent " + VERSION, paths, self.trackers, tp)
 
     # Functions specific to creating RSS feeds
 
@@ -191,18 +219,18 @@ class TileLog:
         # )
         fe.enclosure(
             url=f"http://host.docker.internal:8000/tuscolo2026h1.skylight.geomys.org/torrents/{t_name}.torrent",
-            length=size, #todo should be size of file
+            length=size,  # todo should be size of file
             type="application/x-bittorrent",
         )
 
     def make_rss_feed(self, feed_url):
-        #TODO: Make an index.html file in a new function?
+        # TODO: Make an index.html file in a new function?
         fg = FeedGenerator()
         fg.load_extension("torrent")
         fg.title(self.log_name)
         fg.link(href=feed_url)
         fg.description("TODO")
-        #TODO Make different feeds for data level, tile and both?
+        # TODO Make different feeds for data level, tile and both?
         paths = glob(self.torrents + "/*.torrent")
         for p in paths:
             self.add_torrent_to_feed(fg, p)
