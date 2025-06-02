@@ -136,7 +136,8 @@ class TileLog:
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
         ]
-        # TODO Is there a remainder missing here?
+        assert(sum((len(x) for x in chunks)) == len(tiles))
+
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.map(run_scraper, chunks)
 
