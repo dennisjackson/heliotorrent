@@ -10,8 +10,6 @@ import coloredlogs
 from TileLog import TileLog
 
 if __name__ == "__main__":
-    coloredlogs.install(level="INFO")
-
     parser = argparse.ArgumentParser(description="Build torrents for a Sunlight Logs")
     parser.add_argument("log_url", help="URL of the log to scrape")
     parser.add_argument("--out", help="Directory to save scraped files", default="data")
@@ -24,8 +22,13 @@ if __name__ == "__main__":
         help="Maximum number of entries to fetch",
         default=None,
     )
-
+    parser.add_argument(
+        "--verbose",
+        help="Emit verbose logs",
+        action="store_true",
+    )
     args = parser.parse_args()
+    coloredlogs.install(level="DEBUG" if args.verbose else "INFO")
     tl = TileLog(args.log_url, args.out, args.entry_limit)
     while True:
         start_time = time.time()

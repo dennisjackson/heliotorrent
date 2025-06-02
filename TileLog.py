@@ -44,12 +44,16 @@ class TileLog:
             )
         try:
             with urllib.request.urlopen(TRACKER_LIST_URL) as r:
-                self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
+                self.trackers = [
+                    x.decode().strip() for x in r.readlines() if len(x) > 1
+                ]
                 logging.debug(
                     f"Discovered {len(self.trackers)} trackers from {TRACKER_LIST_URL}"
                 )
         except Exception as e:
-            logging.error(f"Error fetching trackers from {TRACKER_LIST_URL}",exc_info=e)
+            logging.error(
+                f"Error fetching trackers from {TRACKER_LIST_URL}", exc_info=e
+            )
         for x in [self.checkpoints, self.torrents, self.tiles]:
             os.makedirs(x, exist_ok=True)
 
@@ -141,7 +145,7 @@ class TileLog:
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
         ]
-        assert(sum((len(x) for x in chunks)) == len(tiles))
+        assert sum((len(x[1]) for x in chunks)) == len(tiles)
 
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.map(run_scraper, chunks)
@@ -153,21 +157,26 @@ class TileLog:
     # Functions for creating torrent files
 
     def __should_generate_new_upper_torrent(self, current_checkpoint):
-        torrents = glob("f{self.torrents}/{self.log_name}-L2345-0-[0-9]*.torrent")
-        last_modified = max(torrents, key=os.path.getmtime)
-        if time.time() - last_modified < 6 * 60 * 60:
+        torrents = glob(f"{self.torrents}/L2345-0-[0-9]*.torrent")
+        last_modified = max(torrents, key=os.path.getmtime, default=0)
+        if time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60:
             logging.debug(
                 f"Not generating a new upper tree torrent, last modified too recent {last_modified}"
             )
             return False
         last_checkpoint_size = max(
-            [int(re.search(r"-(\d+)\.torrent$", p)) for p in torrents], default=0
+            [int(re.search(r"-(\d+)\.torrent$", p).group(1)) for p in torrents],
+            default=0,
         )
+        logging.debug(f"last upper torrent generated {last_modified}, considered stale")
         if (
             current_checkpoint // TILES_PER_LEAF_TORRENT
             - last_checkpoint_size // TILES_PER_LEAF_TORRENT
             > 0
         ):
+            logging.debug(
+                f"entries since last checkpoint: {current_checkpoint -last_checkpoint_size }"
+            )
             return True
         logging.debug(
             f"Not generating a new upper tree torrent, no new leaf torrents. new:{current_checkpoint}, old:{last_checkpoint_size}"
@@ -194,7 +203,7 @@ class TileLog:
             paths = self.__get_upper_tree_tile_paths(0, size)
             paths = [f"{self.storage}/{x}" for x in paths]
             paths += [self.__get_latest_checkpoint()[1]]
-            paths += [f"{self.storage}/README.md"] #TODO needs creating
+            paths += [f"{self.storage}/README.md"]  # TODO needs creating
             tp = f"{self.torrents}/L2345-0-{size}.torrent"
             if self.max_size:
                 logging.warning(
