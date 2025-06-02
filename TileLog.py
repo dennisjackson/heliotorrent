@@ -42,12 +42,14 @@ class TileLog:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
             )
-        with urllib.request.urlopen(TRACKER_LIST_URL) as r:
-            self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
-            logging.debug(
-                f"Discovered {len(self.trackers)} trackers from {TRACKER_LIST_URL}"
-            )
-
+        try:
+            with urllib.request.urlopen(TRACKER_LIST_URL) as r:
+                self.trackers = [x.decode().strip() for x in r.readlines() if len(x) > 1]
+                logging.debug(
+                    f"Discovered {len(self.trackers)} trackers from {TRACKER_LIST_URL}"
+                )
+        except Exception as e:
+            logging.error(f"Error fetching trackers from {TRACKER_LIST_URL}",exc_info=e)
         for x in [self.checkpoints, self.torrents, self.tiles]:
             os.makedirs(x, exist_ok=True)
 
@@ -96,10 +98,13 @@ class TileLog:
 
     def __get_latest_checkpoint(self, refresh=False):
         if refresh:
-            with urllib.request.urlopen(f"{self.url}/checkpoint") as r:
-                chkpt = r.read().decode()
-                size = chkpt.split("\n")[1]
-                logging.info(f"Fetched checkpoint of size {size} from {self.url}")
+            try:
+                with urllib.request.urlopen(f"{self.url}/checkpoint") as r:
+                    chkpt = r.read().decode()
+                    size = chkpt.splitlines()[1]
+                    logging.info(f"Fetched checkpoint of size {size} from {self.url}")
+            except Exception as e:
+                logging.error(f"Failed to fetch checkpoint from {self.url}", exc_info=e)
             with open(f"{self.checkpoints}/{size}", "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(
