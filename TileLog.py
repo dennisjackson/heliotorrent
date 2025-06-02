@@ -199,7 +199,7 @@ class TileLog:
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
         if self.__should_generate_new_upper_torrent(size):
-            name = f"{self.log_name}-L2345-0-{size}.torrent"
+            name = f"{self.log_name}-L2345-0-{size}"
             paths = self.__get_upper_tree_tile_paths(0, size)
             paths = [f"{self.storage}/{x}" for x in paths]
             paths += [self.__get_latest_checkpoint()[1]]
