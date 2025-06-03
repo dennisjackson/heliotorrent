@@ -115,18 +115,14 @@ def get_torrent_file_info(tf):
 
 def run_scraper(paired_input):
     command, input_list = paired_input
-    std_out = sys.stdout if logging.getLogger().getEffectiveLevel() is logging.DEBUG else sys.stdout #subprocess.DEVNULL
     try:
         subprocess.run(
             command,
             input="\n".join(input_list).encode(),
             stdout=sys.stdout,
-            stderr=std_out,
-            check=False, #yolo
+            stderr=sys.stdout,
+            check=True,
         )
     except subprocess.CalledProcessError as e:
         logging.error(f"Error running {' '.join(command)}", exc_info=e)
-        with open('dump.txt','w') as f:
-            f.write("\n".join(input_list))
-        print(input_list)
-        exit(-1)
+

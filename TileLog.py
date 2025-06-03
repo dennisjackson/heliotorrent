@@ -120,45 +120,36 @@ class TileLog:
 
     def download_tiles(self):
         size = self.__get_latest_tree_size(refresh=True)
-        parsed_url = urlsplit(self.url)
         command = [
             "wget",
             "--input-file=-",
-            # f"--base={self.url}",
             "--no-clobber",
             "--retry-connrefused",
             "--retry-on-host-error",
-            # f"--directory-prefix={self.tiles}",
             f"--directory-prefix=data",  #TODO FIXME
             "--force-directories",
-            # "--no-host-directories",
-            # "--cut-dirs=1",
             "--compression=gzip",
             "--no-verbose" if logging.getLogger().getEffectiveLevel() is not logging.DEBUG else '',
-            f"--user-agent={USER_AGENT}",
+            f'--user-agent="{USER_AGENT}"',
         ]
         tiles = self.__get_all_tile_paths()
         tiles = [self.url +'/' + t for t in tiles]
-        # print(' '.join(command))
-        # print(tiles[0])
-        # exit(0)
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {len(tiles)} tiles to scrape")
 
-        # We run 4 scrapers in parallel. Each scrape has at most one request in flight at a time.
-        # Each scraper also supports a backoff.
+        # Split 100 chunks across 10 workers
         chunk_size = math.ceil(len(tiles) / 100)
         chunks = [
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
         ]
+
         assert sum((len(x[1]) for x in chunks)) == len(tiles)
         for (command,tiles) in chunks:
             assert len(tiles) > 0
-        with ThreadPoolExecutor(max_workers=4) as executor:
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(run_scraper, chunks)
-        # for c in chunks:
-            # run_scraper(c)
 
         logging.info(
             f"Fetched all {len(tiles)} tiles up to entry {size}"
