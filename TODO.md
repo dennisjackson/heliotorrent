@@ -5,15 +5,16 @@
 
 * Ok so a duct taped solution is now together:
 * Now the qbittorrent config needs all wrapping up together.
-* Plus a caddy webserver to serve it all.
-  * Maybe having a public feed folder with magnet links and a private folder served locally would be the best way.
-* Possible BUG where the upper tree tiles are not being recognized in qbittorrent. Not sure why.
+* Let's just put it all on Cloudflare Pages!
 * qBittorrent config will need the seeding limit turned off as well (already done via GUI)
 * I think the qbittorrent config is actually trivial. It's just a case of packaging the config files which are plaintext anyway.
   * The rules and rss feed need transforming, but that should be pretty smooth anyway.
   * Might need to check about editing the config whilst its running though!
   * So maybe a different command?
-
+* I need to fix up the log / directory names for Let's Encrypt. Maybe consming the log name from the metadata would be a better idea?
+  * Note to self: suitably escaped of course.
+  * Currently, the let's encrypt stuff is getting put in tile/tile. So that needs fixing. Argh.
+*
 ### Automated seeding
 
 I tested that qbittorrent can seed it to transmission-cli running on GCP. It was pretty simple. Just apt-get install. Then run it with the magnet link. It will download the torrent  file. Then run it with the torrent file. transmission-remote is meant to be better.
@@ -31,8 +32,8 @@ For PoC - Just one Let's Encrypt and one Gensys log?
 ## Nice to have
 
 * Fix all the path joins!
-* Error handling, catch exceptions
-* Don't generate top level torrents if the last one isn't at least X old / X entries old.
+* Handle lets encrypt logs which runder the same domain but different paths (sigh!)
+  * Worth getting the name from their manifest feature?
 
 ###  HTTP Sources
 

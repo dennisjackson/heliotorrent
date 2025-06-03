@@ -30,11 +30,11 @@ TRACKER_LIST_URL = (
 
 class TileLog:
     def __init__(self, monitoring_url, storage_dir, max_size=None):
-        self.url = monitoring_url
-        self.log_name = urlsplit(monitoring_url).netloc
+        self.url = monitoring_url.removesuffix('/')
+        self.log_name = monitoring_url.removeprefix('https://')
         self.storage = storage_dir + "/" + self.log_name
         self.checkpoints = self.storage + "/checkpoints"
-        self.torrents = self.storage + "/torrents"
+        self.torrents = storage_dir + "/torrents/" + self.log_name
         self.tiles = self.storage + "/tile"
         self.max_size = max_size
         # TODO - Create a readme file here
@@ -103,12 +103,13 @@ class TileLog:
     def __get_latest_checkpoint(self, refresh=False):
         if refresh:
             try:
-                with urllib.request.urlopen(f"{self.url}/checkpoint") as r:
+                chkpt_url = f"{self.url}/checkpoint"
+                with urllib.request.urlopen(chkpt_url) as r:
                     chkpt = r.read().decode()
                     size = chkpt.splitlines()[1]
-                    logging.info(f"Fetched checkpoint of size {size} from {self.url}")
+                    logging.info(f"Fetched checkpoint of size {size}")
             except Exception as e:
-                logging.error(f"Failed to fetch checkpoint from {self.url}", exc_info=e)
+                logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
             with open(f"{self.checkpoints}/{size}", "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(
@@ -119,39 +120,48 @@ class TileLog:
 
     def download_tiles(self):
         size = self.__get_latest_tree_size(refresh=True)
+        parsed_url = urlsplit(self.url)
         command = [
             "wget",
             "--input-file=-",
-            f"--base={self.url}",
+            # f"--base={self.url}",
             "--no-clobber",
             "--retry-connrefused",
             "--retry-on-host-error",
-            f"--directory-prefix={self.tiles}",
+            # f"--directory-prefix={self.tiles}",
+            f"--directory-prefix=data",  #TODO FIXME
             "--force-directories",
-            "--no-host-directories",
-            "--cut-dirs=1",
+            # "--no-host-directories",
+            # "--cut-dirs=1",
             "--compression=gzip",
-            "--no-verbose",
+            "--no-verbose" if logging.getLogger().getEffectiveLevel() is not logging.DEBUG else '',
             f"--user-agent={USER_AGENT}",
         ]
         tiles = self.__get_all_tile_paths()
+        tiles = [self.url +'/' + t for t in tiles]
+        # print(' '.join(command))
+        # print(tiles[0])
+        # exit(0)
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {len(tiles)} tiles to scrape")
 
         # We run 4 scrapers in parallel. Each scrape has at most one request in flight at a time.
         # Each scraper also supports a backoff.
-        chunk_size = math.ceil(len(tiles) / 4)
+        chunk_size = math.ceil(len(tiles) / 100)
         chunks = [
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
         ]
         assert sum((len(x[1]) for x in chunks)) == len(tiles)
-
+        for (command,tiles) in chunks:
+            assert len(tiles) > 0
         with ThreadPoolExecutor(max_workers=4) as executor:
             executor.map(run_scraper, chunks)
+        # for c in chunks:
+            # run_scraper(c)
 
         logging.info(
-            f"Fetched all {len(tiles)} tiles up to entry {size} for {self.log_name}"
+            f"Fetched all {len(tiles)} tiles up to entry {size}"
         )
 
     # Functions for creating torrent files
