@@ -3,37 +3,25 @@
 
 ##  Must do
 
+### Seeding
+
 * Ok so a duct taped solution is now together:
 * Now the qbittorrent config needs all wrapping up together.
 * Let's just put it all on Cloudflare Pages!
 * qBittorrent config will need the seeding limit turned off as well (already done via GUI)
 * I think the qbittorrent config is actually trivial. It's just a case of packaging the config files which are plaintext anyway.
   * The rules and rss feed need transforming, but that should be pretty smooth anyway.
-  * Might need to check about editing the config whilst its running though!
-  * So maybe a different command?
-* I need to fix up the log / directory names for Let's Encrypt. Maybe consming the log name from the metadata would be a better idea?
-  * Note to self: suitably escaped of course.
-  * Currently, the let's encrypt stuff is getting put in tile/tile. So that needs fixing. Argh.
-*
-### Automated seeding
-
-I tested that qbittorrent can seed it to transmission-cli running on GCP. It was pretty simple. Just apt-get install. Then run it with the magnet link. It will download the torrent  file. Then run it with the torrent file. transmission-remote is meant to be better.
-
-With qbittorrent I think its even easier. We just need the rules setup with RSS so that it auto-discovers the right folder for seeding,
-
-Easy to serve the RSS feed with python -m http.server 8000 in the data directory.
 
 ### Hosting
 
-Host on github pages under a branch.
+Host on cloudflare pages under a branch.
 Add a html file as a jumping off point for the different RSS feeds and a setup guide.
 For PoC - Just one Let's Encrypt and one Gensys log?
 
 ## Nice to have
 
 * Fix all the path joins!
-* Handle lets encrypt logs which runder the same domain but different paths (sigh!)
-  * Worth getting the name from their manifest feature?
+* prioritise missing tiles from higher up in the tree. only fetch so many low-level tiles per scraping run. 
 
 ###  HTTP Sources
 
