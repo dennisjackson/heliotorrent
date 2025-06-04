@@ -119,7 +119,10 @@ class TileLog:
         return latest, p
 
     def download_tiles(self):
+        old_size = self.__get_latest_tree_size(refresh=False)
         size = self.__get_latest_tree_size(refresh=True)
+        tiles_to_scrape = (size - old_size) // 256
+        log_level = logging.getLogger().getEffectiveLevel()
         command = [
             "wget",
             "--input-file=-",
@@ -129,13 +132,13 @@ class TileLog:
             f"--directory-prefix=data",  #TODO FIXME
             "--force-directories",
             "--compression=gzip",
-            "--no-verbose" if logging.getLogger().getEffectiveLevel() is not logging.DEBUG else '',
+            "--no-verbose" if log_level is logging.DEBUG else '--quiet',
             f'--user-agent="{USER_AGENT}"',
         ]
         tiles = self.__get_all_tile_paths()
         tiles = [self.url +'/' + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
-        logging.debug(f"Identified {len(tiles)} tiles to scrape")
+        logging.debug(f"Identified {tiles_to_scrape} new tiles since last run")
 
         # Split 100 chunks across 10 workers
         chunk_size = math.ceil(len(tiles) / 100)
@@ -152,7 +155,7 @@ class TileLog:
             executor.map(run_scraper, chunks)
 
         logging.info(
-            f"Fetched all {len(tiles)} tiles up to entry {size}"
+            f"Fetched all {size // 256} tiles up to entry {size}"
         )
 
     # Functions for creating torrent files
