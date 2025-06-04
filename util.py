@@ -25,10 +25,10 @@ TILE_SIZE = 256
 def int_to_parts(tile_number: int) -> List[str]:
     """
     Convert an integer tile number to path parts.
-    
+
     Args:
         tile_number: The tile number to convert
-        
+
     Returns:
         A list of string parts representing the path components
     """
@@ -42,20 +42,17 @@ def int_to_parts(tile_number: int) -> List[str]:
 
 
 def paths_in_level(
-    start_tile: int, 
-    end_tile: int, 
-    tree_size: int, 
-    partials: int = 0
+    start_tile: int, end_tile: int, tree_size: int, partials: int = 0
 ) -> Generator[str, None, None]:
     """
     Generate paths for tiles in a specific level.
-    
+
     Args:
         start_tile: First tile to include
         end_tile: Last tile to include (exclusive)
         tree_size: Total size of the tree
         partials: Number of partial entries (0 for none)
-        
+
     Yields:
         Path strings for each tile
     """
@@ -63,7 +60,7 @@ def paths_in_level(
     for i in range(start_tile, min(end_tile, tree_size)):
         parts = int_to_parts(i)
         yield "/".join(parts)
-        
+
     # Generate path for partial tile if needed
     if partials:
         parts = int_to_parts(tree_size)
@@ -73,16 +70,16 @@ def paths_in_level(
 
 
 def get_hash_tile_paths(
-    start_entry: int, 
-    end_entry: int, 
-    tree_size: int, 
-    level_start: int = 0, 
-    level_end: int = 6, 
-    partials_req: bool = False
+    start_entry: int,
+    end_entry: int,
+    tree_size: int,
+    level_start: int = 0,
+    level_end: int = 6,
+    partials_req: bool = False,
 ) -> Generator[str, None, None]:
     """
     Generate paths for hash tiles.
-    
+
     Args:
         start_entry: First entry to include
         end_entry: Last entry to include
@@ -90,7 +87,7 @@ def get_hash_tile_paths(
         level_start: First level to include
         level_end: Last level to include (exclusive)
         partials_req: Whether to include partial tiles
-        
+
     Yields:
         Path strings for each hash tile
     """
@@ -99,7 +96,7 @@ def get_hash_tile_paths(
         end_entry = math.ceil(end_entry / TILE_SIZE)
         partials = (tree_size % TILE_SIZE) if partials_req else 0
         tree_size //= TILE_SIZE
-        
+
         if level in range(level_start, level_end):
             yield from (
                 f"tile/{level}/{x}"
@@ -110,27 +107,24 @@ def get_hash_tile_paths(
 
 
 def get_data_tile_paths(
-    start_entry: int, 
-    end_entry: int, 
-    tree_size: int, 
-    compressed: bool = False
+    start_entry: int, end_entry: int, tree_size: int, compressed: bool = False
 ) -> Generator[str, None, None]:
     """
     Generate paths for data tiles.
-    
+
     Args:
         start_entry: First entry to include
         end_entry: Last entry to include
         tree_size: Total size of the tree
         compressed: Whether to use compressed data paths
-        
+
     Yields:
         Path strings for each data tile
     """
     start_entry //= TILE_SIZE
     end_entry = math.ceil(end_entry / TILE_SIZE)
     tree_size //= TILE_SIZE
-    
+
     prefix = "tile/compressed_data" if compressed else "tile/data"
     yield from (
         f"{prefix}/{x}" for x in paths_in_level(start_entry, end_entry, tree_size)
@@ -140,7 +134,7 @@ def get_data_tile_paths(
 def show_progress(torrent: Torrent, stage: str, current: int, total: int) -> None:
     """
     Display progress of torrent creation.
-    
+
     Args:
         torrent: The torrent being created
         stage: Current stage of creation
@@ -156,22 +150,18 @@ def show_progress(torrent: Torrent, stage: str, current: int, total: int) -> Non
 
 
 def create_torrent_file(
-    name: str, 
-    author: str, 
-    paths: List[str], 
-    trackers: List[str], 
-    out_path: str
+    name: str, author: str, paths: List[str], trackers: List[str], out_path: str
 ) -> Optional[Torrent]:
     """
     Create a torrent file from the given paths.
-    
+
     Args:
         name: Name of the torrent
         author: Creator of the torrent
         paths: List of file paths to include
         trackers: List of tracker URLs
         out_path: Path to save the torrent file
-        
+
     Returns:
         The created Torrent object or None if creation failed
     """
@@ -179,7 +169,7 @@ def create_torrent_file(
     if os.path.isfile(out_path):
         logging.debug(f"{out_path} already exists")
         return None
-        
+
     # Check if all files exist
     missing_files = [p for p in paths if not os.path.exists(p)]
     if missing_files:
@@ -187,7 +177,7 @@ def create_torrent_file(
             logging.info(f"Missing file: {path}")
         logging.error(f"Missing files for torrent {name}")
         return None
-        
+
     # Create and write torrent
     torrent = Torrent(
         trackers=trackers,
@@ -197,12 +187,14 @@ def create_torrent_file(
     )
     torrent.filepaths = paths
     torrent.name = name
-    
+
     try:
         torrent.generate(callback=show_progress, interval=0.1)
         print("\r" + " " * 80 + "\r", end="")  # Clear progress line
         torrent.write(out_path)
-        logging.info(f"Wrote {out_path} with content size {humanize.naturalsize(torrent.size)}")
+        logging.info(
+            f"Wrote {out_path} with content size {humanize.naturalsize(torrent.size)}"
+        )
         return torrent
     except Exception as e:
         logging.error(f"Failed to create torrent {name}: {e}")
@@ -212,10 +204,10 @@ def create_torrent_file(
 def get_torrent_file_info(torrent_path: str) -> Optional[Tuple[str, int]]:
     """
     Extract info hash and length from a torrent file.
-    
+
     Args:
         torrent_path: Path to the torrent file
-        
+
     Returns:
         Tuple of (infohash, length) or None if extraction failed
     """
@@ -230,7 +222,7 @@ def get_torrent_file_info(torrent_path: str) -> Optional[Tuple[str, int]]:
     if not info:
         logging.error(f"No info dict in torrent {torrent_path}")
         return None
-        
+
     # Calculate info hash
     info_encoded = bencodepy.encode(info)
     infohash = hashlib.sha1(info_encoded).hexdigest()
@@ -240,19 +232,19 @@ def get_torrent_file_info(torrent_path: str) -> Optional[Tuple[str, int]]:
         length = sum(f.get(b"length", 0) for f in info[b"files"])
     else:  # single-file torrent
         length = info.get(b"length", 0)
-        
+
     return (infohash, length)
 
 
 def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
     """
     Run an external command with the given input.
-    
+
     Args:
         paired_input: Tuple of (command, input_list)
     """
     command, input_list = paired_input
-    
+
     try:
         subprocess.run(
             command,
@@ -263,4 +255,3 @@ def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
         )
     except subprocess.CalledProcessError as e:
         logging.error(f"Error running {' '.join(command)}: {e.returncode}")
-

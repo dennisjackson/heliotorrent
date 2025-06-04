@@ -30,8 +30,8 @@ TRACKER_LIST_URL = (
 
 class TileLog:
     def __init__(self, monitoring_url, storage_dir, max_size=None):
-        self.url = monitoring_url.removesuffix('/')
-        self.log_name = monitoring_url.removeprefix('https://')
+        self.url = monitoring_url.removesuffix("/")
+        self.log_name = monitoring_url.removeprefix("https://")
         self.storage = storage_dir + "/" + self.log_name
         self.checkpoints = self.storage + "/checkpoints"
         self.torrents = storage_dir + "/torrents/" + self.log_name
@@ -129,14 +129,14 @@ class TileLog:
             "--no-clobber",
             "--retry-connrefused",
             "--retry-on-host-error",
-            f"--directory-prefix=data",  #TODO FIXME
+            f"--directory-prefix=data",  # TODO FIXME
             "--force-directories",
             "--compression=gzip",
-            "--no-verbose" if log_level is logging.DEBUG else '--quiet',
+            "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
         ]
         tiles = self.__get_all_tile_paths()
-        tiles = [self.url +'/' + t for t in tiles]
+        tiles = [self.url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {tiles_to_scrape} new tiles since last run")
 
@@ -148,15 +148,13 @@ class TileLog:
         ]
 
         assert sum((len(x[1]) for x in chunks)) == len(tiles)
-        for (command,tiles) in chunks:
+        for command, tiles in chunks:
             assert len(tiles) > 0
 
         with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(run_scraper, chunks)
 
-        logging.info(
-            f"Fetched all {size // 256} tiles up to entry {size}"
-        )
+        logging.info(f"Fetched all {size // 256} tiles up to entry {size}")
 
     # Functions for creating torrent files
 

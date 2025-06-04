@@ -24,11 +24,11 @@ def log_loop(
     feed_url: str,
     out_dir: str,
     entry_limit: Optional[int],
-    verbose: bool
+    verbose: bool,
 ) -> None:
     """
     Main processing loop for a single log.
-    
+
     Args:
         log_url: URL of the log to scrape
         frequency: How often to run in seconds
@@ -37,8 +37,8 @@ def log_loop(
         entry_limit: Maximum number of entries to fetch
         verbose: Whether to emit verbose logs
     """
-    log_name = log_url.removeprefix('https://')
-    fmt = f'%(asctime)s {log_name} %(levelname)s: %(message)s'
+    log_name = log_url.removeprefix("https://")
+    fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
     coloredlogs.install(level="DEBUG" if verbose else "INFO", fmt=fmt)
     tl = TileLog(log_url, out_dir, entry_limit)
 
@@ -48,41 +48,36 @@ def log_loop(
         tl.make_torrents()
         tl.make_rss_feed(feed_url)
         running_time = time.time() - start_time
-        
+
         if frequency == 0:
             sys.exit(0)
-            
+
         if running_time < frequency:
             to_sleep = frequency - running_time
             logging.debug(f"Sleeping for {to_sleep:.2f} seconds")
             time.sleep(to_sleep)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Build torrents for Sunlight Logs",
-        epilog="Example: ./heliotorrent.py --logs https://tuscolo2026h1.skylight.geomys.org/ --out data/"
+        epilog="Example: ./heliotorrent.py --logs https://tuscolo2026h1.skylight.geomys.org/ --out data/",
     )
     parser.add_argument(
-        '--logs', 
-        type=lambda s: s.split(','),
+        "--logs",
+        type=lambda s: s.split(","),
         required=True,
-        help='Comma-separated list of log URLs to monitor'
+        help="Comma-separated list of log URLs to monitor",
     )
     parser.add_argument(
-        "--feed-url", 
-        help="Base URL for the RSS feed", 
-        default="http://127.0.0.1"
+        "--feed-url", help="Base URL for the RSS feed", default="http://127.0.0.1"
     )
+    parser.add_argument("--out", help="Directory to save scraped files", default="data")
     parser.add_argument(
-        "--out", 
-        help="Directory to save scraped files", 
-        default="data"
-    )
-    parser.add_argument(
-        "--frequency", 
-        type=int, 
-        help="How often to run in seconds (0 for one-time run)", 
-        default=300
+        "--frequency",
+        type=int,
+        help="How often to run in seconds (0 for one-time run)",
+        default=300,
     )
     parser.add_argument(
         "--entry-limit",
@@ -101,16 +96,16 @@ if __name__ == "__main__":
     processes = []
     for log_url in args.logs:
         process = Process(
-            target=log_loop, 
-            daemon=True, 
+            target=log_loop,
+            daemon=True,
             args=(
-                log_url, 
-                args.frequency, 
-                args.feed_url, 
+                log_url,
+                args.frequency,
+                args.feed_url,
                 args.out,
                 args.entry_limit,
-                args.verbose
-            )
+                args.verbose,
+            ),
         )
         processes.append(process)
         process.start()
