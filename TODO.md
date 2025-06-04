@@ -18,10 +18,17 @@ Host on cloudflare pages under a branch.
 Add a html file as a jumping off point for the different RSS feeds and a setup guide.
 For PoC - Just one Let's Encrypt and one Gensys log?
 
+### Long term seeding plan
+
+ * Actually kind of awkward to bootstrap
+ * I think a VPS with a webhost that proxies the log for a http seed might actually be the best way forward.
+ * Just rewrite requests to go to the log direct. It will get rate limited though without agreement. Can pop a cache on it but still...
+ * Either caddy or nginx
+
 ## Nice to have
 
 * Fix all the path joins!
-* prioritise missing tiles from higher up in the tree. only fetch so many low-level tiles per scraping run. 
+* prioritise missing tiles from higher up in the tree. only fetch so many low-level tiles per scraping run.
 
 ###  HTTP Sources
 
