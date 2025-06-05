@@ -31,7 +31,7 @@ TRACKER_LIST_URL = (
 class TileLog:
     def __init__(self, monitoring_url, storage_dir, max_size=None):
         self.url = monitoring_url.removesuffix("/")
-        self.log_name = monitoring_url.removeprefix("https://")
+        self.log_name = monitoring_url.removeprefix("https://").removesuffix('/')
         self.storage = storage_dir + "/" + self.log_name
         self.checkpoints = self.storage + "/checkpoints"
         self.torrents = storage_dir + "/torrents/" + self.log_name
@@ -235,7 +235,7 @@ class TileLog:
         #     type="application/x-bittorrent",
         # )
         fe.enclosure(
-            url=f"http://host.docker.internal:8000/tuscolo2026h1.skylight.geomys.org/torrents/{t_name}.torrent",
+            url=f"http://host.docker.internal:8000/torrents/tuscolo2026h1.skylight.geomys.org/{t_name}.torrent",
             length=size,  # todo should be size of file
             type="application/x-bittorrent",
         )
