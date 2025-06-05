@@ -7,7 +7,8 @@ services:
       - "8000:80"
     volumes:
       - ./conf.d:/etc/nginx/conf.d
-      - ./cache:/var/cache/nginx
+      - ./cache:/var/cache/nginx:rw
+      - persistent_cache:/var/cache/nginx/persistent
     environment:
       - NGINX_HOST=localhost
       - NGINX_PORT=8000
@@ -18,3 +19,7 @@ services:
 networks:
   proxy-network:
     driver: bridge
+
+volumes:
+  persistent_cache:
+    driver: local
