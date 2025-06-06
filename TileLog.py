@@ -160,10 +160,10 @@ class TileLog:
 
     def __should_generate_new_upper_torrent(self, current_checkpoint):
         torrents = glob(f"{self.torrents}/L2345-0-[0-9]*.torrent")
-        last_modified = max(torrents, key=os.path.getmtime, default=0)
-        if time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60:
+        last_modified = max(torrents, key=os.path.getmtime, default=None )
+        if last_modified and time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60:
             logging.debug(
-                f"Not generating a new upper tree torrent, last modified too recent {last_modified}"
+                f"Not generating a new upper tree torrent, last modified too recent: {os.path.getmtime(last_modified)}"
             )
             return False
         last_checkpoint_size = max(

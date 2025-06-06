@@ -25,6 +25,23 @@ For PoC - Just one Let's Encrypt and one Gensys log?
  * Just rewrite requests to go to the log direct. It will get rate limited though without agreement. Can pop a cache on it but still...
  * Either caddy or nginx
 
+* Have Nginx up and running.
+* Urls seem to be set correctly but qbittorrent still isn't happy. Need to figure out why.
+* Hypothesis was use of gzip. But think I have a module to disable that. qbittorrent patch notes suggest it does support gzip
+* Docker thingy is running on gcp.
+
+* After quite a lot of faff...
+* Torrent clients typically don't support gzip / content encoding. Transmission uses CURL with it [disabled](https://github.com/transmission/transmission/blob/f7373cb6483bd624c065cdc5a3b53908ee9b1902/libtransmission/web.cc#L636). Qbittorent/libtorrent has a handrolled [client](https://github.com/arvidn/libtorrent/blob/2e16847613497a033d005076330adc264471b3fa/src/web_peer_connection.cpp).
+* I'm experimenting with compiling transmission with gzip decoding enabled.
+* The Static CT spec kind of violates expectations here by serving gzip even if transmission asks for no encoding.
+* Nginx doesn't seem to be able to fix this and will quite happily serve a lot of invalid content in the wrong config.
+* On the server side, I think I'll need something written in Rust / Go to serve as the proxy.
+* Thankfully, it looks like ChatGPt has a pretty good idea.
+* Transmissions logs seem much better than qbittorrent. Can be grabbed from the UI.
+  * Transmission has no native rss feed support though.
+  * Maybe FlexGet would be the solution? Or some other manual script?
+
+
 ## Nice to have
 
 * Fix all the path joins!
