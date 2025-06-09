@@ -41,6 +41,7 @@ For PoC - Just one Let's Encrypt and one Gensys log?
   * Transmission has no native rss feed support though.
   * Maybe FlexGet would be the solution? Or some other manual script?
 
+* I vibe coded some rust. I guess I should re-use the heliostat name.
 
 ## Nice to have
 
@@ -87,3 +88,12 @@ I think this is possible for data tiles.
 ### Hybrid Torrents
 
 Support v2 and v1 Torrents. Sounds like torrent-file rather than torf might be the way to go.
+
+### Log List?
+
+https://www.gstatic.com/ct/log_list/v3/all_logs_list.json
+
+# Storage Options
+
+Heztner has large disks via Storage Share but won't be very performant. Can be mounted.
+OVH has unlimited bandwidth.
