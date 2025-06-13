@@ -119,12 +119,10 @@ class TileLog:
         return latest, p
 
     def download_tiles(self, start_index=None, stop_index=None):
-        old_size = self.get_latest_tree_size(refresh=False)
-        size = self.get_latest_tree_size(refresh=True)
         if start_index is None:
-            start_index = old_size
+            start_index = self.get_latest_tree_size(refresh=False) # 0?
         if stop_index is None:
-            stop_index = size
+            stop_index = self.get_latest_tree_size(refresh=True)
         tiles_to_scrape = (stop_index - start_index) // 256
         log_level = logging.getLogger().getEffectiveLevel()
         command = [
@@ -139,7 +137,7 @@ class TileLog:
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
         ]
-        tiles = self.__get_all_tile_paths(start_index, stop_index)
+        tiles = self.__get_leaf_tile_paths(start_index, stop_index) #todo fixme
         tiles = [self.url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}")
@@ -191,6 +189,7 @@ class TileLog:
 
     def make_torrents(self, ranges):
         for startIndex, endIndex in ranges:
+            assert (endIndex - startIndex) == TILES_PER_LEAF_TORRENT, "End index must be greater than or equal to start index"
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = f"{self.torrents}/L01-{startIndex}-{endIndex}.torrent"
             paths = self.__get_leaf_tile_paths(
@@ -243,7 +242,9 @@ class TileLog:
         split_ranges = []
         for start, end in missing_ranges:
             while start < end:
-                chunk_end = min(start + TILES_PER_LEAF_TORRENT, end)
+                chunk_end = start + TILES_PER_LEAF_TORRENT
+                if chunk_end > end:
+                    break
                 split_ranges.append((start, chunk_end))
                 start = chunk_end
         logging.info("Identified missing ranges: " + str(split_ranges))
