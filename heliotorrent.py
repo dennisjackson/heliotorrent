@@ -25,6 +25,7 @@ def log_loop(
     out_dir: str,
     entry_limit: Optional[int],
     verbose: bool,
+    delete_tiles: bool,
 ) -> None:
     """
     Main processing loop for a single log.
@@ -36,6 +37,7 @@ def log_loop(
         out_dir: Directory to save scraped files
         entry_limit: Maximum number of entries to fetch
         verbose: Whether to emit verbose logs
+        delete_tiles: Whether to delete used tiles after processing
     """
     log_name = log_url.removeprefix("https://")
     fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
@@ -44,9 +46,17 @@ def log_loop(
 
     while True:
         start_time = time.time()
-        tl.download_tiles()
-        tl.make_torrents()
-        tl.make_rss_feed(feed_url)
+        latest_size = tl.get_latest_tree_size(refresh=True)
+        missing_ranges = tl.get_missing_torrent_ranges(0, latest_size)
+
+        for start_index, stop_index in missing_ranges:
+            logging.info(f"Processing range {start_index} to {stop_index}")
+            tl.download_tiles(start_index, stop_index)
+            tl.make_torrents([(start_index, stop_index)])
+            tl.make_rss_feed(feed_url)
+            if delete_tiles:
+                tl.delete_tiles(start_index, stop_index)
+
         running_time = time.time() - start_time
 
         if frequency == 0:
@@ -90,6 +100,11 @@ if __name__ == "__main__":
         help="Emit verbose logs",
         action="store_true",
     )
+    parser.add_argument(
+        "--delete-tiles",
+        help="Delete used tiles after processing",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     # Create and start a process for each log
@@ -105,6 +120,7 @@ if __name__ == "__main__":
                 args.out,
                 args.entry_limit,
                 args.verbose,
+                args.delete_tiles,
             ),
         )
         processes.append(process)

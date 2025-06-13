@@ -61,7 +61,7 @@ class TileLog:
         if start_index is None:
             start_index = 0
         if stop_index is None:
-            stop_index = self.__get_latest_tree_size()
+            stop_index = self.get_latest_tree_size()
         paths = []
         paths += get_data_tile_paths(start_index, stop_index, stop_index)
         paths += get_hash_tile_paths(
@@ -78,7 +78,7 @@ class TileLog:
         if start_index is None:
             start_index = 0
         if stop_index is None:
-            stop_index = self.__get_latest_tree_size()
+            stop_index = self.get_latest_tree_size()
         paths = []
         paths += get_hash_tile_paths(
             start_index, stop_index, stop_index, level_start=2, partials_req=True
@@ -91,7 +91,7 @@ class TileLog:
         paths += self.__get_upper_tree_tile_paths(start_index, stop_index)
         return paths
 
-    def __get_latest_tree_size(self, refresh=False):
+    def get_latest_tree_size(self, refresh=False):
         size = self.__get_latest_checkpoint(refresh=refresh)[0]
         if self.max_size:
             return min(size, self.max_size)
@@ -119,8 +119,8 @@ class TileLog:
         return latest, p
 
     def download_tiles(self, start_index=None, stop_index=None):
-        old_size = self.__get_latest_tree_size(refresh=False)
-        size = self.__get_latest_tree_size(refresh=True)
+        old_size = self.get_latest_tree_size(refresh=False)
+        size = self.get_latest_tree_size(refresh=True)
         if start_index is None:
             start_index = old_size
         if stop_index is None:
@@ -204,7 +204,7 @@ class TileLog:
         logging.info(f"Generated L01 torrents for ranges: {ranges}")
 
     def make_upper_torrents(self):
-        size = self.__get_latest_tree_size()
+        size = self.get_latest_tree_size()
         if self.__should_generate_new_upper_torrent(size):
             name = f"{self.log_name}-L2345-0-{size}"
             paths = self.__get_upper_tree_tile_paths(0, size)
@@ -288,3 +288,18 @@ class TileLog:
         fp = f"{self.torrents}/feed.xml"
         fg.rss_file(fp, pretty=True)
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
+
+    def delete_tiles(self, start_index, stop_index):
+        data_tile_paths = get_data_tile_paths(start_index, stop_index, stop_index)
+        hash_tile_paths = get_hash_tile_paths(
+            start_index, stop_index, stop_index, level_start=0, level_end=1, partials_req=False
+        )
+        all_tile_paths = data_tile_paths + hash_tile_paths
+
+        for tile_path in all_tile_paths:
+            full_path = os.path.join(self.storage, tile_path)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                logging.info(f"Deleted tile: {full_path}")
+            else:
+                logging.debug(f"Tile not found, skipping: {full_path}")
