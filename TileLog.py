@@ -243,10 +243,10 @@ class TileLog:
         split_ranges = []
         for start, end in missing_ranges:
             while start < end:
-                chunk_end = min(start + TILES_PER_LEAF_TORRENT * 256, end)
+                chunk_end = min(start + TILES_PER_LEAF_TORRENT, end)
                 split_ranges.append((start, chunk_end))
                 start = chunk_end
-
+        logging.info("Identified missing ranges: " + str(split_ranges))
         return split_ranges
 
     # Functions specific to creating RSS feeds
