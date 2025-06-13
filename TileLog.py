@@ -118,10 +118,14 @@ class TileLog:
         p = f"{self.checkpoints}/{latest}"
         return latest, p
 
-    def download_tiles(self):
+    def download_tiles(self, start_index=None, stop_index=None):
         old_size = self.__get_latest_tree_size(refresh=False)
         size = self.__get_latest_tree_size(refresh=True)
-        tiles_to_scrape = (size - old_size) // 256
+        if start_index is None:
+            start_index = old_size
+        if stop_index is None:
+            stop_index = size
+        tiles_to_scrape = (stop_index - start_index) // 256
         log_level = logging.getLogger().getEffectiveLevel()
         command = [
             "wget",
@@ -135,10 +139,10 @@ class TileLog:
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
         ]
-        tiles = self.__get_all_tile_paths()
+        tiles = self.__get_all_tile_paths(start_index, stop_index)
         tiles = [self.url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
-        logging.debug(f"Identified {tiles_to_scrape} new tiles since last run")
+        logging.debug(f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}")
 
         # Split 100 chunks across 10 workers
         chunk_size = math.ceil(len(tiles) / 100)
@@ -154,7 +158,7 @@ class TileLog:
         with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(run_scraper, chunks)
 
-        logging.info(f"Fetched all {size // 256} tiles up to entry {size}")
+        logging.info(f"Fetched all tiles between entries {start_index} and {stop_index}")
 
     # Functions for creating torrent files
 
