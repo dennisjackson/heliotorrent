@@ -189,11 +189,8 @@ class TileLog:
         )
         return False
 
-    def make_torrents(self):
-        size = self.__get_latest_tree_size()
-        for i in range(TILES_PER_LEAF_TORRENT, size, TILES_PER_LEAF_TORRENT):
-            startIndex = i - TILES_PER_LEAF_TORRENT
-            endIndex = i
+    def make_torrents(self, ranges):
+        for startIndex, endIndex in ranges:
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = f"{self.torrents}/L01-{startIndex}-{endIndex}.torrent"
             paths = self.__get_leaf_tile_paths(
@@ -204,6 +201,10 @@ class TileLog:
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
+        logging.info(f"Generated L01 torrents for ranges: {ranges}")
+
+    def make_upper_torrents(self):
+        size = self.__get_latest_tree_size()
         if self.__should_generate_new_upper_torrent(size):
             name = f"{self.log_name}-L2345-0-{size}"
             paths = self.__get_upper_tree_tile_paths(0, size)
@@ -213,11 +214,40 @@ class TileLog:
             tp = f"{self.torrents}/L2345-0-{size}.torrent"
             if self.max_size:
                 logging.warning(
-                    "max_size is set, so upper tree torrent may be misisng files"
+                    "max_size is set, so upper tree torrent may be missing files"
                 )
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
+            logging.info(f"Generated upper tree torrent: {tp}")
+
+    def get_missing_torrent_ranges(self, start_index, stop_index):
+        existing_torrents = glob(f"{self.torrents}/L01-*-*.torrent")
+        existing_ranges = [
+            tuple(map(int, re.search(r"L01-(\d+)-(\d+)\.torrent$", os.path.basename(t)).groups()))
+            for t in existing_torrents
+        ]
+        existing_ranges.sort()
+
+        missing_ranges = []
+        current_start = start_index
+
+        for start, end in existing_ranges:
+            if current_start < start:
+                missing_ranges.append((current_start, start))
+            current_start = max(current_start, end)
+
+        if current_start < stop_index:
+            missing_ranges.append((current_start, stop_index))
+
+        split_ranges = []
+        for start, end in missing_ranges:
+            while start < end:
+                chunk_end = min(start + TILES_PER_LEAF_TORRENT * 256, end)
+                split_ranges.append((start, chunk_end))
+                start = chunk_end
+
+        return split_ranges
 
     # Functions specific to creating RSS feeds
 
