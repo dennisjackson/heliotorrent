@@ -22,7 +22,7 @@ from util import (
 
 VERSION = "v0.0.0"
 USER_AGENT = f"Heliotorrent {VERSION} Contact: scraper-reports@dennis-jackson.uk"
-TILES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
+ENTRIES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
 TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
@@ -149,7 +149,7 @@ This Torrent was produced by {VERSION}
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
         ]
-        tiles = self.__get_leaf_tile_paths(start_index, stop_index) #todo fixme
+        tiles = self.__get_leaf_tile_paths(start_index, stop_index) #todo fixme only downloads leafs
         tiles = [self.url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}")
@@ -186,8 +186,8 @@ This Torrent was produced by {VERSION}
         )
         logging.debug(f"last upper torrent generated {last_modified}, considered stale")
         if (
-            current_checkpoint // TILES_PER_LEAF_TORRENT
-            - last_checkpoint_size // TILES_PER_LEAF_TORRENT
+            current_checkpoint // ENTRIES_PER_LEAF_TORRENT
+            - last_checkpoint_size // ENTRIES_PER_LEAF_TORRENT
             > 0
         ):
             logging.debug(
@@ -201,7 +201,7 @@ This Torrent was produced by {VERSION}
 
     def make_torrents(self, ranges):
         for startIndex, endIndex in ranges:
-            assert (endIndex - startIndex) == TILES_PER_LEAF_TORRENT, "End index must be greater than or equal to start index"
+            assert (endIndex - startIndex) == ENTRIES_PER_LEAF_TORRENT, "End index must be greater than or equal to start index"
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = os.path.join(self.torrents, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
@@ -221,7 +221,7 @@ This Torrent was produced by {VERSION}
             paths = self.__get_upper_tree_tile_paths(0, size)
             paths = [os.path.join(self.storage, x) for x in paths]
             paths += [self.__get_latest_checkpoint()[1]]
-            paths += [os.path.join(self.storage, "README.md")]  # TODO needs creating
+            paths += [os.path.join(self.storage, "README.md")]
             tp = os.path.join(self.torrents, f"L2345-0-{size}.torrent")
             if self.max_size:
                 logging.warning(
@@ -254,7 +254,7 @@ This Torrent was produced by {VERSION}
         split_ranges = []
         for start, end in missing_ranges:
             while start < end:
-                chunk_end = start + TILES_PER_LEAF_TORRENT
+                chunk_end = start + ENTRIES_PER_LEAF_TORRENT
                 if chunk_end > end:
                     break
                 split_ranges.append((start, chunk_end))
