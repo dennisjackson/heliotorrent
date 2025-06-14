@@ -39,4 +39,4 @@ jobs:
         pytest
     - name: Smoke test
       run: |
-        python3 cli.py https://tuscolo2026h1.skylight.geomys.org/ --frequency 0 --entry-limit 2048
+        ./heliotorrent.py --logs https://tuscolo2026h1.skylight.geomys.org/ --frequency 0 --entry-limit 2048 --verbose
