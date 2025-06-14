@@ -32,10 +32,10 @@ class TileLog:
     def __init__(self, monitoring_url, storage_dir, max_size=None):
         self.url = monitoring_url.removesuffix("/")
         self.log_name = monitoring_url.removeprefix("https://").removesuffix('/')
-        self.storage = storage_dir + "/" + self.log_name
-        self.checkpoints = self.storage + "/checkpoints"
-        self.torrents = storage_dir + "/torrents/" + self.log_name
-        self.tiles = self.storage + "/tile"
+        self.storage = os.path.join(storage_dir, self.log_name)
+        self.checkpoints = os.path.join(self.storage, "checkpoints")
+        self.torrents = os.path.join(storage_dir, "torrents", self.log_name)
+        self.tiles = os.path.join(self.storage, "tile")
         self.max_size = max_size
         # TODO - Create a readme file here
         if max_size:
@@ -110,12 +110,12 @@ class TileLog:
                     logging.info(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
-            with open(f"{self.checkpoints}/{size}", "w", encoding="utf-8") as w:
+            with open(os.path.join(self.checkpoints, size), "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(
             (int(os.path.basename(x)) for x in glob(f"{self.checkpoints}/" + "*"))
         )
-        p = f"{self.checkpoints}/{latest}"
+        p = os.path.join(self.checkpoints, str(latest))
         return latest, p
 
     def download_tiles(self, start_index=None, stop_index=None):
@@ -161,7 +161,7 @@ class TileLog:
     # Functions for creating torrent files
 
     def __should_generate_new_upper_torrent(self, current_checkpoint):
-        torrents = glob(f"{self.torrents}/L2345-0-[0-9]*.torrent")
+        torrents = glob(os.path.join(self.torrents, "L2345-0-[0-9]*.torrent"))
         last_modified = max(torrents, key=os.path.getmtime, default=None )
         if last_modified and time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60:
             logging.debug(
@@ -191,12 +191,12 @@ class TileLog:
         for startIndex, endIndex in ranges:
             assert (endIndex - startIndex) == TILES_PER_LEAF_TORRENT, "End index must be greater than or equal to start index"
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
-            tp = f"{self.torrents}/L01-{startIndex}-{endIndex}.torrent"
+            tp = os.path.join(self.torrents, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
                 start_index=startIndex, stop_index=endIndex
             )
-            paths = [f"{self.storage}/{x}" for x in paths]
-            paths += [f"{self.storage}/README.md"]
+            paths = [os.path.join(self.storage, x) for x in paths]
+            paths += [os.path.join(self.storage, "README.md")]
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
@@ -207,10 +207,10 @@ class TileLog:
         if self.__should_generate_new_upper_torrent(size):
             name = f"{self.log_name}-L2345-0-{size}"
             paths = self.__get_upper_tree_tile_paths(0, size)
-            paths = [f"{self.storage}/{x}" for x in paths]
+            paths = [os.path.join(self.storage, x) for x in paths]
             paths += [self.__get_latest_checkpoint()[1]]
-            paths += [f"{self.storage}/README.md"]  # TODO needs creating
-            tp = f"{self.torrents}/L2345-0-{size}.torrent"
+            paths += [os.path.join(self.storage, "README.md")]  # TODO needs creating
+            tp = os.path.join(self.torrents, f"L2345-0-{size}.torrent")
             if self.max_size:
                 logging.warning(
                     "max_size is set, so upper tree torrent may be missing files"
@@ -221,7 +221,7 @@ class TileLog:
             logging.info(f"Generated upper tree torrent: {tp}")
 
     def get_missing_torrent_ranges(self, start_index, stop_index):
-        existing_torrents = glob(f"{self.torrents}/L01-*-*.torrent")
+        existing_torrents = glob(os.path.join(self.torrents, "L01-*-*.torrent"))
         existing_ranges = [
             tuple(map(int, re.search(r"L01-(\d+)-(\d+)\.torrent$", os.path.basename(t)).groups()))
             for t in existing_torrents
@@ -286,7 +286,7 @@ class TileLog:
         paths = glob(self.torrents + "/*.torrent")
         for p in paths:
             self.add_torrent_to_feed(fg, p)
-        fp = f"{self.torrents}/feed.xml"
+        fp = os.path.join(self.torrents, "feed.xml")
         fg.rss_file(fp, pretty=True)
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
 
