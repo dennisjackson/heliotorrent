@@ -37,7 +37,7 @@ class TileLog:
         self.torrents = os.path.join(storage_dir, "torrents", self.log_name)
         self.tiles = os.path.join(self.storage, "tile")
         self.max_size = max_size
-        # TODO - Create a readme file here
+        self.download_dir = storage_dir #TODO not great.
         if max_size:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
@@ -54,8 +54,20 @@ class TileLog:
             logging.error(
                 f"Error fetching trackers from {TRACKER_LIST_URL}", exc_info=e
             )
-        for x in [self.checkpoints, self.torrents, self.tiles]:
+        for x in [self.storage, self.download_dir,self.checkpoints, self.torrents, self.tiles]:
             os.makedirs(x, exist_ok=True)
+        self.generate_readme()
+
+    def generate_readme(self):
+        readme_path = os.path.join(self.storage, "README.md")
+        content = f"""# {self.log_name} Tile Log
+
+This directory contains tiles scraped from the monitoring URL: {self.url}.
+This Torrent was produced by {VERSION}
+"""
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        logging.info(f"Generated README file at {readme_path}")
 
     def __get_leaf_tile_paths(self, start_index=None, stop_index=None):
         if start_index is None:
@@ -131,7 +143,7 @@ class TileLog:
             "--no-clobber",
             "--retry-connrefused",
             "--retry-on-host-error",
-            f"--directory-prefix=data",  # TODO FIXME
+            f"--directory-prefix={self.download_dir}",
             "--force-directories",
             "--compression=gzip",
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
@@ -291,10 +303,10 @@ class TileLog:
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
 
     def delete_tiles(self, start_index, stop_index):
-        data_tile_paths = get_data_tile_paths(start_index, stop_index, stop_index)
-        hash_tile_paths = get_hash_tile_paths(
+        data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))
+        hash_tile_paths = list(get_hash_tile_paths(
             start_index, stop_index, stop_index, level_start=0, level_end=1, partials_req=False
-        )
+        ))
         all_tile_paths = data_tile_paths + hash_tile_paths
 
         for tile_path in all_tile_paths:
