@@ -31,13 +31,13 @@ TRACKER_LIST_URL = (
 class TileLog:
     def __init__(self, monitoring_url, storage_dir, max_size=None):
         self.url = monitoring_url.removesuffix("/")
-        self.log_name = monitoring_url.removeprefix("https://").removesuffix('/')
+        self.log_name = monitoring_url.removeprefix("https://").removesuffix("/")
         self.storage = os.path.join(storage_dir, self.log_name)
         self.checkpoints = os.path.join(self.storage, "checkpoints")
         self.torrents = os.path.join(storage_dir, "torrents", self.log_name)
         self.tiles = os.path.join(self.storage, "tile")
         self.max_size = max_size
-        self.download_dir = storage_dir #TODO not great.
+        self.download_dir = storage_dir  # TODO not great.
         if max_size:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
@@ -54,7 +54,13 @@ class TileLog:
             logging.error(
                 f"Error fetching trackers from {TRACKER_LIST_URL}", exc_info=e
             )
-        for x in [self.storage, self.download_dir,self.checkpoints, self.torrents, self.tiles]:
+        for x in [
+            self.storage,
+            self.download_dir,
+            self.checkpoints,
+            self.torrents,
+            self.tiles,
+        ]:
             os.makedirs(x, exist_ok=True)
         self.generate_readme()
 
@@ -132,7 +138,7 @@ This Torrent was produced by {VERSION}
 
     def download_tiles(self, start_index=None, stop_index=None):
         if start_index is None:
-            start_index = self.get_latest_tree_size(refresh=False) # 0?
+            start_index = self.get_latest_tree_size(refresh=False)  # 0?
         if stop_index is None:
             stop_index = self.get_latest_tree_size(refresh=True)
         tiles_to_scrape = (stop_index - start_index) // 256
@@ -149,10 +155,14 @@ This Torrent was produced by {VERSION}
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
         ]
-        tiles = self.__get_leaf_tile_paths(start_index, stop_index) #todo fixme only downloads leafs
+        tiles = self.__get_leaf_tile_paths(
+            start_index, stop_index
+        )  # todo fixme only downloads leafs
         tiles = [self.url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
-        logging.debug(f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}")
+        logging.debug(
+            f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}"
+        )
 
         # Split 100 chunks across 10 workers
         chunk_size = math.ceil(len(tiles) / 100)
@@ -168,14 +178,19 @@ This Torrent was produced by {VERSION}
         with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(run_scraper, chunks)
 
-        logging.info(f"Fetched all tiles between entries {start_index} and {stop_index}")
+        logging.info(
+            f"Fetched all tiles between entries {start_index} and {stop_index}"
+        )
 
     # Functions for creating torrent files
 
     def __should_generate_new_upper_torrent(self, current_checkpoint):
         torrents = glob(os.path.join(self.torrents, "L2345-0-[0-9]*.torrent"))
-        last_modified = max(torrents, key=os.path.getmtime, default=None )
-        if last_modified and time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60:
+        last_modified = max(torrents, key=os.path.getmtime, default=None)
+        if (
+            last_modified
+            and time.time() - os.path.getmtime(last_modified) < 6 * 60 * 60
+        ):
             logging.debug(
                 f"Not generating a new upper tree torrent, last modified too recent: {os.path.getmtime(last_modified)}"
             )
@@ -201,7 +216,11 @@ This Torrent was produced by {VERSION}
 
     def make_torrents(self, ranges):
         for startIndex, endIndex in ranges:
-            assert (endIndex - startIndex) == ENTRIES_PER_LEAF_TORRENT, "End index must be greater than or equal to start index"
+            assert (
+                endIndex - startIndex
+            ) == ENTRIES_PER_LEAF_TORRENT, (
+                "End index must be greater than or equal to start index"
+            )
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = os.path.join(self.torrents, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
@@ -235,7 +254,14 @@ This Torrent was produced by {VERSION}
     def get_missing_torrent_ranges(self, start_index, stop_index):
         existing_torrents = glob(os.path.join(self.torrents, "L01-*-*.torrent"))
         existing_ranges = [
-            tuple(map(int, re.search(r"L01-(\d+)-(\d+)\.torrent$", os.path.basename(t)).groups()))
+            tuple(
+                map(
+                    int,
+                    re.search(
+                        r"L01-(\d+)-(\d+)\.torrent$", os.path.basename(t)
+                    ).groups(),
+                )
+            )
             for t in existing_torrents
         ]
         existing_ranges.sort()
@@ -304,9 +330,16 @@ This Torrent was produced by {VERSION}
 
     def delete_tiles(self, start_index, stop_index):
         data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))
-        hash_tile_paths = list(get_hash_tile_paths(
-            start_index, stop_index, stop_index, level_start=0, level_end=1, partials_req=False
-        ))
+        hash_tile_paths = list(
+            get_hash_tile_paths(
+                start_index,
+                stop_index,
+                stop_index,
+                level_start=0,
+                level_end=1,
+                partials_req=False,
+            )
+        )
         all_tile_paths = data_tile_paths + hash_tile_paths
 
         for tile_path in all_tile_paths:
