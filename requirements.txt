@@ -3,3 +3,4 @@ feedgen
 humanize
 torf
 coloredlogs
+pytest

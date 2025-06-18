@@ -29,15 +29,22 @@ TRACKER_LIST_URL = (
 
 
 class TileLog:
-    def __init__(self, monitoring_url, storage_dir, max_size=None):
-        self.url = monitoring_url.removesuffix("/")
+    def __init__(self, monitoring_url, storage_dir, torrent_dir, feed_url, max_size=None):
+        self.monitoring_url = monitoring_url.removesuffix("/")
         self.log_name = monitoring_url.removeprefix("https://").removesuffix("/")
-        self.storage = os.path.join(storage_dir, self.log_name)
-        self.checkpoints = os.path.join(self.storage, "checkpoints")
-        self.torrents = os.path.join(storage_dir, "torrents", self.log_name)
-        self.tiles = os.path.join(self.storage, "tile")
         self.max_size = max_size
-        self.download_dir = storage_dir  # TODO not great.
+        self.feed_url = feed_url
+
+        # TODO calculate this when we are about to invoke wget. Doesn't need to be stored.
+        self.nested_dir_count = len(urlsplit(self.monitoring_url).path.split("/")) - 1
+
+
+        self.storage_dir = os.path.join(storage_dir, self.log_name)
+        self.checkpoints_dir = os.path.join(self.storage_dir, "checkpoint")
+        self.tiles_dir = os.path.join(self.storage_dir, "tile")
+
+        self.torrents_dir = os.path.join(torrent_dir, self.log_name)
+
         if max_size:
             logging.warning(
                 f"Running TileLog with maximum entry limit of {self.max_size}"
@@ -55,20 +62,19 @@ class TileLog:
                 f"Error fetching trackers from {TRACKER_LIST_URL}", exc_info=e
             )
         for x in [
-            self.storage,
-            self.download_dir,
-            self.checkpoints,
-            self.torrents,
-            self.tiles,
+            self.storage_dir,
+            self.tiles_dir,
+            self.checkpoints_dir,
+            self.torrents_dir,
         ]:
             os.makedirs(x, exist_ok=True)
         self.generate_readme()
 
     def generate_readme(self):
-        readme_path = os.path.join(self.storage, "README.md")
+        readme_path = os.path.join(self.storage_dir, "README.md")
         content = f"""# {self.log_name} Tile Log
 
-This directory contains tiles scraped from the monitoring URL: {self.url}.
+This directory contains tiles scraped from the monitoring URL: {self.monitoring_url}.
 This Torrent was produced by {VERSION}
 """
         with open(readme_path, "w", encoding="utf-8") as f:
@@ -121,19 +127,19 @@ This Torrent was produced by {VERSION}
     def __get_latest_checkpoint(self, refresh=False):
         if refresh:
             try:
-                chkpt_url = f"{self.url}/checkpoint"
+                chkpt_url = f"{self.monitoring_url}/checkpoint"
                 with urllib.request.urlopen(chkpt_url) as r:
                     chkpt = r.read().decode()
                     size = chkpt.splitlines()[1]
                     logging.info(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
-            with open(os.path.join(self.checkpoints, size), "w", encoding="utf-8") as w:
+            with open(os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(
-            (int(os.path.basename(x)) for x in glob(f"{self.checkpoints}/" + "*"))
+            (int(os.path.basename(x)) for x in glob(f"{self.checkpoints_dir}/" + "*"))
         )
-        p = os.path.join(self.checkpoints, str(latest))
+        p = os.path.join(self.checkpoints_dir, str(latest))
         return latest, p
 
     def download_tiles(self, start_index=None, stop_index=None):
@@ -149,16 +155,18 @@ This Torrent was produced by {VERSION}
             "--no-clobber",
             "--retry-connrefused",
             "--retry-on-host-error",
-            f"--directory-prefix={self.download_dir}",
+            f"--directory-prefix={self.tiles_dir}",
             "--force-directories",
+            '--no-host-directories',
             "--compression=gzip",
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
+            f'--cut-dirs={self.nested_dir_count+1}',
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index
         )  # todo fixme only downloads leafs
-        tiles = [self.url + "/" + t for t in tiles]
+        tiles = [self.monitoring_url + "/" + t for t in tiles]
         random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
         logging.debug(
             f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}"
@@ -185,7 +193,7 @@ This Torrent was produced by {VERSION}
     # Functions for creating torrent files
 
     def __should_generate_new_upper_torrent(self, current_checkpoint):
-        torrents = glob(os.path.join(self.torrents, "L2345-0-[0-9]*.torrent"))
+        torrents = glob(os.path.join(self.torrents_dir, "L2345-0-[0-9]*.torrent"))
         last_modified = max(torrents, key=os.path.getmtime, default=None)
         if (
             last_modified
@@ -219,15 +227,15 @@ This Torrent was produced by {VERSION}
             assert (
                 endIndex - startIndex
             ) == ENTRIES_PER_LEAF_TORRENT, (
-                "End index must be greater than or equal to start index"
+                f"Elements in torrent must match {ENTRIES_PER_LEAF_TORRENT} (ENTRIES_PER_LEAF_TORRENT)"
             )
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
-            tp = os.path.join(self.torrents, f"L01-{startIndex}-{endIndex}.torrent")
+            tp = os.path.join(self.torrents_dir, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
                 start_index=startIndex, stop_index=endIndex
             )
-            paths = [os.path.join(self.storage, x) for x in paths]
-            paths += [os.path.join(self.storage, "README.md")]
+            paths = [os.path.join(self.storage_dir, x) for x in paths]
+            paths += [os.path.join(self.storage_dir, "README.md")]
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
@@ -238,10 +246,10 @@ This Torrent was produced by {VERSION}
         if self.__should_generate_new_upper_torrent(size):
             name = f"{self.log_name}-L2345-0-{size}"
             paths = self.__get_upper_tree_tile_paths(0, size)
-            paths = [os.path.join(self.storage, x) for x in paths]
+            paths = [os.path.join(self.storage_dir, x) for x in paths]
             paths += [self.__get_latest_checkpoint()[1]]
-            paths += [os.path.join(self.storage, "README.md")]
-            tp = os.path.join(self.torrents, f"L2345-0-{size}.torrent")
+            paths += [os.path.join(self.storage_dir, "README.md")]
+            tp = os.path.join(self.torrents_dir, f"L2345-0-{size}.torrent")
             if self.max_size:
                 logging.warning(
                     "max_size is set, so upper tree torrent may be missing files"
@@ -252,7 +260,7 @@ This Torrent was produced by {VERSION}
             logging.info(f"Generated upper tree torrent: {tp}")
 
     def get_missing_torrent_ranges(self, start_index, stop_index):
-        existing_torrents = glob(os.path.join(self.torrents, "L01-*-*.torrent"))
+        existing_torrents = glob(os.path.join(self.torrents_dir, "L01-*-*.torrent"))
         existing_ranges = [
             tuple(
                 map(
@@ -307,24 +315,25 @@ This Torrent was produced by {VERSION}
         #     length=size,
         #     type="application/x-bittorrent",
         # )
+        base_url = self.feed_url.rsplit("/", 1)[0]
         fe.enclosure(
-            url=f"http://host.docker.internal:8000/torrents/tuscolo2026h1.skylight.geomys.org/{t_name}.torrent",
-            length=size,  # todo should be size of file
+            url=f"{base_url}/{t_name}.torrent",
+            length=str(size),
             type="application/x-bittorrent",
         )
 
-    def make_rss_feed(self, feed_url):
+    def make_rss_feed(self):
         # TODO: Make an index.html file in a new function?
         fg = FeedGenerator()
         fg.load_extension("torrent")
         fg.title(self.log_name)
-        fg.link(href=feed_url)
+        fg.link(href=self.feed_url)
         fg.description("TODO")
         # TODO Make different feeds for data level, tile and both?
-        paths = glob(self.torrents + "/*.torrent")
+        paths = glob(os.path.join(self.torrents_dir, "*.torrent"))
         for p in paths:
             self.add_torrent_to_feed(fg, p)
-        fp = os.path.join(self.torrents, "feed.xml")
+        fp = os.path.join(self.torrents_dir, "feed.xml")
         fg.rss_file(fp, pretty=True)
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
 
@@ -343,7 +352,7 @@ This Torrent was produced by {VERSION}
         all_tile_paths = data_tile_paths + hash_tile_paths
 
         for tile_path in all_tile_paths:
-            full_path = os.path.join(self.storage, tile_path)
+            full_path = os.path.join(self.storage_dir, tile_path)
             if os.path.exists(full_path):
                 os.remove(full_path)
                 logging.info(f"Deleted tile: {full_path}")
