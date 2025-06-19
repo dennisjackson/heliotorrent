@@ -179,7 +179,7 @@ class TileLog:
             f'--user-agent="{USER_AGENT}"',
             f'--cut-dirs={nested_dir_count}',
             '--tcp-fastopen',
-            '--max-threads=20',
+            '--max-threads=5',
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index

@@ -248,6 +248,8 @@ logs:
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
+    #TODO Check Wget2 is installed.
+
     # Extract global settings
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
