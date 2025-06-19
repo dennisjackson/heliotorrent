@@ -166,18 +166,20 @@ class TileLog:
         log_level = logging.getLogger().getEffectiveLevel()
         nested_dir_count = len(urlsplit(self.monitoring_url).path.split("/"))
         command = [
-            "wget",
+            "wget2",
             "--input-file=-",
             "--no-clobber",
             "--retry-connrefused",
-            "--retry-on-host-error",
+            # "--retry-on-host-error",
             f"--directory-prefix={self.tiles_dir}",
             "--force-directories",
             '--no-host-directories',
-            "--compression=gzip",
+            "--compression=gzip,zstd,identity",
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
             f'--cut-dirs={nested_dir_count}',
+            '--tcp-fastopen',
+            '--max-threads=20',
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index
@@ -189,7 +191,7 @@ class TileLog:
         )
 
         # Split 100 chunks across 10 workers
-        chunk_size = math.ceil(len(tiles) / 40)
+        chunk_size = math.ceil(len(tiles) / 1)
         chunks = [
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
@@ -199,7 +201,7 @@ class TileLog:
         for command, tiles in chunks:
             assert len(tiles) > 0
 
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=1) as executor:
             executor.map(run_scraper, chunks)
 
         logging.debug(
