@@ -189,7 +189,7 @@ class TileLog:
         )
 
         # Split 100 chunks across 10 workers
-        chunk_size = math.ceil(len(tiles) / 1)
+        chunk_size = math.ceil(len(tiles) / 40)
         chunks = [
             (command, tiles[i : i + chunk_size])
             for i in range(0, len(tiles), chunk_size)
@@ -199,7 +199,7 @@ class TileLog:
         for command, tiles in chunks:
             assert len(tiles) > 0
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             executor.map(run_scraper, chunks)
 
         logging.debug(
