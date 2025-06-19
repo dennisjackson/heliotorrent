@@ -6,13 +6,15 @@ from TileLog import TileLog
 
 
 @pytest.fixture
-def tile_log():
+def tile_log(monkeypatch):
     logging.basicConfig(level=logging.DEBUG, force=True)  # Enable debug logs
+    monkeypatch.setattr("TileLog.FETCH_CHECKPOINT_BACKOFF", 5)
     monitoring_url = "https://tuscolo2026h1.skylight.geomys.org/"
-    storage_dir = "test_data"
-    torrent_dir = "test_torrents"
+    storage_dir = "test/storage"
+    torrent_dir = "test/torrents"
     feed_url = "http://localhost:8000/feed.xml"
     max_size = 1024  # Limit for testing
+    log_name = "tuscolo_pytest"
 
     # Ensure clean test environment
     if os.path.exists(storage_dir):
@@ -21,6 +23,7 @@ def tile_log():
         shutil.rmtree(torrent_dir)
 
     tile_log_instance = TileLog(
+        log_name=log_name,
         monitoring_url=monitoring_url,
         storage_dir=storage_dir,
         torrent_dir=torrent_dir,

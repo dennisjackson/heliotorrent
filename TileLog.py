@@ -26,6 +26,7 @@ ENTRIES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
 TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
+FETCH_CHECKPOINT_BACKOFF = 60
 
 
 class TileLog:
@@ -143,10 +144,10 @@ class TileLog:
                 with urllib.request.urlopen(chkpt_url) as r:
                     chkpt = r.read().decode()
                     size = chkpt.splitlines()[1]
-                    logging.info(f"Fetched checkpoint of size {size}")
+                    logging.debug(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
-                time.sleep(60)
+                time.sleep(FETCH_CHECKPOINT_BACKOFF)
                 return self.__get_latest_checkpoint(refresh=refresh,iterations=iterations+1)
             with open(os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8") as w:
                 w.write(chkpt)
@@ -201,7 +202,7 @@ class TileLog:
         with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(run_scraper, chunks)
 
-        logging.info(
+        logging.debug(
             f"Fetched all tiles between entries {start_index} and {stop_index}"
         )
 
@@ -254,7 +255,7 @@ class TileLog:
             create_torrent_file(
                 name, "HelioTorrent " + VERSION, paths, self.trackers, tp
             )
-        logging.info(f"Generated L01 torrents for ranges: {ranges}")
+        logging.debug(f"Generated L01 torrents for ranges: {ranges}")
 
     def make_upper_torrents(self):
         size = self.get_latest_tree_size()

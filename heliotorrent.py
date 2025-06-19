@@ -66,13 +66,15 @@ def log_loop(
         missing_ranges = tl.get_missing_torrent_ranges(0, latest_size)
 
         if missing_ranges:
+            missing = sum([end - start for start, end in missing_ranges])
+            logging.info(f"Missing {missing} entries across {len(missing_ranges)} torrents. {(latest_size - missing) / latest_size * 100:.2f}% Complete")
             for start_index, stop_index in missing_ranges:
-                logging.info(f"Processing range {start_index} to {stop_index}")
+                logging.debug(f"Processing range {start_index} to {stop_index}")
                 tl.download_tiles(start_index, stop_index)
                 tl.make_torrents([(start_index, stop_index)])
                 if delete_tiles:
                     tl.delete_tiles(start_index, stop_index)
-            tl.make_rss_feed()
+                tl.make_rss_feed()
         else:
             logging.debug("No missing ranges to process.")
 
