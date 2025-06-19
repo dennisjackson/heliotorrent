@@ -76,7 +76,7 @@ def log_loop(
                     tl.delete_tiles(start_index, stop_index)
                 tl.make_rss_feed()
         else:
-            logging.debug("No missing ranges to process.")
+            logging.info("No missing ranges to process.")
 
         running_time = time.time() - start_time
 
