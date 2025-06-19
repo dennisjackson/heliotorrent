@@ -74,17 +74,21 @@ class TileLog:
         self.generate_readme()
 
     def generate_readme(self):
-        # TODO Only if file doesn't already exist.
-        # TODO - What if the version changes between torrents!
         readme_path = os.path.join(self.storage_dir, "README.md")
-        content = f"""# {self.log_name} Tile Log
+        expected_content = f"""LOG URL: {self.monitoring_url}"""
 
-This directory contains tiles scraped from the monitoring URL: {self.monitoring_url}.
-This Torrent was produced by {VERSION}
-"""
-        with open(readme_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        logging.info(f"Generated README file at {readme_path}")
+        if os.path.exists(readme_path):
+            with open(readme_path, "r", encoding="utf-8") as f:
+                existing_content = f.read()
+
+            if existing_content != expected_content:
+                logging.error(f"Existing README at {readme_path} has different content than expected. Changing this file will cause issues with the existing torrents.")
+                exit(-1)
+        else:
+            # File doesn't exist, create it
+            with open(readme_path, "w", encoding="utf-8") as f:
+                f.write(expected_content)
+            logging.info(f"Generated README file at {readme_path}")
 
     def __get_leaf_tile_paths(self, start_index=None, stop_index=None):
         if start_index is None:
@@ -142,7 +146,7 @@ This Torrent was produced by {VERSION}
                     logging.info(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
-                time.sleep(5)
+                time.sleep(60)
                 return self.__get_latest_checkpoint(refresh=refresh,iterations=iterations+1)
             with open(os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8") as w:
                 w.write(chkpt)

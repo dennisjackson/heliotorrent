@@ -184,7 +184,7 @@ def create_torrent_file(
         private=False,
         created_by=author,
         creation_date=datetime.now(),
-        webseeds="http://34.59.122.149/torrents/webseed/",
+        webseeds="http://34.59.122.149/torrents/webseed/", #TODO Needs to be configurable
     )
     torrent.filepaths = paths
     torrent.name = name
