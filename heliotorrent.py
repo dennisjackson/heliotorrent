@@ -26,7 +26,7 @@ def log_loop(
     log_url: str,
     frequency: int,
     feed_url: str,
-    out_dir: str,
+    data_dir: str,
     torrent_dir: str,
     entry_limit: Optional[int],
     verbose: bool,
@@ -40,7 +40,7 @@ def log_loop(
         log_url: URL of the log to scrape
         frequency: How often to run in seconds
         feed_url: URL for the RSS feed
-        out_dir: Directory to save scraped files
+        data_dir: Directory to save scraped files
         torrent_dir: Directory to store torrent files
         entry_limit: Maximum number of entries to fetch
         verbose: Whether to emit verbose logs
@@ -48,20 +48,30 @@ def log_loop(
     """
     fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
     coloredlogs.install(level="DEBUG" if verbose else "INFO", fmt=fmt)
-    tl = TileLog(log_url, out_dir, entry_limit,torrent_dir,feed_url)
+    tl = TileLog(
+        log_name=log_name,
+        monitoring_url=log_url,
+        storage_dir=data_dir,
+        torrent_dir=torrent_dir,
+        feed_url=feed_url,
+        max_size=entry_limit,
+    )
 
     while True:
         start_time = time.time()
         latest_size = tl.get_latest_tree_size(refresh=True)
         missing_ranges = tl.get_missing_torrent_ranges(0, latest_size)
 
-        for start_index, stop_index in missing_ranges:
-            logging.info(f"Processing range {start_index} to {stop_index}")
-            tl.download_tiles(start_index, stop_index)
-            tl.make_torrents([(start_index, stop_index)])
+        if missing_ranges:
+            for start_index, stop_index in missing_ranges:
+                logging.info(f"Processing range {start_index} to {stop_index}")
+                tl.download_tiles(start_index, stop_index)
+                tl.make_torrents([(start_index, stop_index)])
+                if delete_tiles:
+                    tl.delete_tiles(start_index, stop_index)
             tl.make_rss_feed()
-            if delete_tiles:
-                tl.delete_tiles(start_index, stop_index)
+        else:
+            logging.debug("No missing ranges to process.")
 
         running_time = time.time() - start_time
 
@@ -98,9 +108,9 @@ if __name__ == "__main__":
     EXAMPLE_CONFIG = """\
 # Global settings for Heliotorrent
 # Directory to save downloaded tiles
-out_dir: "torrents"
-# Directory to store generated torrent files
 data_dir: "data"
+# Directory to store generated torrent files
+torrent_dir: "torrents"
 
 # List of logs to monitor
 logs:
@@ -135,15 +145,19 @@ logs:
         config = yaml.safe_load(f)
 
     # Extract global settings
-    out_dir = config.get("out_dir", "torrents")
     data_dir = config.get("data_dir", "data")
+    torrent_dir = config.get("torrent_dir", "torrents")
 
     # Create and start a process for each log
     processes = []
     for log_config in config.get("logs", []):
-        log_url =
-        feed_url =
-        name =
+        if not isinstance(log_config, dict):
+            logging.error(f"invalid log entry in config: {log_config}")
+            exit(-1)
+
+        name = log_config.get("name")
+        log_url = log_config.get("log_url")
+        feed_url = log_config.get("feed_url")
 
         if not log_url or not feed_url or not name:
             logging.warning(
@@ -155,13 +169,13 @@ logs:
             target=log_loop,
             daemon=True,
             args=(
-                log_config.get("name"),
-                log_config.get("log_url"),
+                name,
+                log_url,
                 log_config.get("frequency", 300),
-                log_config.get("feed_url"),
-                out_dir,
+                feed_url,
                 data_dir,
-                log_config.get("entry_limit", None),
+                torrent_dir,
+                log_config.get("entry_limit"),
                 args.verbose,
                 log_config.get("delete_tiles", False),
             ),

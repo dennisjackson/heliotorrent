@@ -4,3 +4,4 @@ humanize
 torf
 coloredlogs
 pytest
+pyyaml

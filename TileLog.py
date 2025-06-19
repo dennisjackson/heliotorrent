@@ -29,15 +29,18 @@ TRACKER_LIST_URL = (
 
 
 class TileLog:
-    def __init__(self, monitoring_url, storage_dir, torrent_dir, feed_url, max_size=None):
+    def __init__(self, log_name, monitoring_url, storage_dir, torrent_dir, feed_url, max_size=None):
         self.monitoring_url = monitoring_url.removesuffix("/")
-        self.log_name = monitoring_url.removeprefix("https://").removesuffix("/")
+
+        # Sanitize log_name to ensure it's suitable as a directory name
+        sanitized_name = re.sub(r'[\\/*?:"<>|]', '_', log_name)  # Replace invalid chars
+        sanitized_name = sanitized_name.strip()  # Remove leading/trailing whitespace
+        if not sanitized_name:
+            sanitized_name = monitoring_url.removeprefix("https://").removesuffix("/").replace(".", "_").replace("/", "_")
+
+        self.log_name = sanitized_name
         self.max_size = max_size
         self.feed_url = feed_url
-
-        # TODO calculate this when we are about to invoke wget. Doesn't need to be stored.
-        self.nested_dir_count = len(urlsplit(self.monitoring_url).path.split("/")) - 1
-
 
         self.storage_dir = os.path.join(storage_dir, self.log_name)
         self.checkpoints_dir = os.path.join(self.storage_dir, "checkpoint")
@@ -71,6 +74,8 @@ class TileLog:
         self.generate_readme()
 
     def generate_readme(self):
+        # TODO Only if file doesn't already exist.
+        # TODO - What if the version changes between torrents!
         readme_path = os.path.join(self.storage_dir, "README.md")
         content = f"""# {self.log_name} Tile Log
 
@@ -149,6 +154,7 @@ This Torrent was produced by {VERSION}
             stop_index = self.get_latest_tree_size(refresh=True)
         tiles_to_scrape = (stop_index - start_index) // 256
         log_level = logging.getLogger().getEffectiveLevel()
+        nested_dir_count = len(urlsplit(self.monitoring_url).path.split("/"))
         command = [
             "wget",
             "--input-file=-",
@@ -161,7 +167,7 @@ This Torrent was produced by {VERSION}
             "--compression=gzip",
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
-            f'--cut-dirs={self.nested_dir_count+1}',
+            f'--cut-dirs={nested_dir_count}',
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index
@@ -293,7 +299,7 @@ This Torrent was produced by {VERSION}
                     break
                 split_ranges.append((start, chunk_end))
                 start = chunk_end
-        logging.info("Identified missing ranges: " + str(split_ranges))
+        logging.debug("Identified missing ranges: " + str(split_ranges))
         return split_ranges
 
     # Functions specific to creating RSS feeds
@@ -355,6 +361,6 @@ This Torrent was produced by {VERSION}
             full_path = os.path.join(self.storage_dir, tile_path)
             if os.path.exists(full_path):
                 os.remove(full_path)
-                logging.info(f"Deleted tile: {full_path}")
+                logging.debug(f"Deleted tile: {full_path}")
             else:
-                logging.debug(f"Tile not found, skipping: {full_path}")
+                logging.warning(f"Tile not found, skipping deleting: {full_path}")

@@ -1,0 +1,18 @@
+
+data_dir: "data"
+torrent_dir: "torrents"
+
+logs:
+    - name: "Geomys Tuscolo2026h1"
+      log_url: "https://tuscolo2026h1.skylight.geomys.org/"
+      feed_url: "http://127.0.0.1/todo/g1/feed.xml"
+      frequency: 300
+      entry_limit: null
+      delete_tiles: true
+
+    - name: "Let's Encrypt Willow2025h2c"
+      log_url: "https://willow.ct.letsencrypt.org/2025h2c/"
+      feed_url: "http://127.0.0.1/todo/w1/feed.xml"
+      frequency: 300
+      entry_limit: null
+      delete_tiles: true
