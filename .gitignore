@@ -8,3 +8,4 @@ data/
 .vscode
 experiments/nginx/cache
 torrents/
+configs/

@@ -129,7 +129,10 @@ This Torrent was produced by {VERSION}
 
     # Functions for scraping logs
 
-    def __get_latest_checkpoint(self, refresh=False):
+    def __get_latest_checkpoint(self, refresh=False,iterations=0):
+        if iterations > 20:
+            logging.critical("Repeated failures to fetch a checkpoint, giving up.")
+            exit(1)
         if refresh:
             try:
                 chkpt_url = f"{self.monitoring_url}/checkpoint"
@@ -139,6 +142,8 @@ This Torrent was produced by {VERSION}
                     logging.info(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
+                time.sleep(5)
+                return self.__get_latest_checkpoint(refresh=refresh,iterations=iterations+1)
             with open(os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8") as w:
                 w.write(chkpt)
         latest = max(

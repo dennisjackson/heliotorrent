@@ -12,8 +12,11 @@ import os
 import shutil
 import time
 import sys
+import urllib.request
+import json
+from datetime import datetime
 from multiprocessing import Process
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 import coloredlogs
 import yaml
@@ -84,6 +87,80 @@ def log_loop(
             time.sleep(to_sleep)
 
 
+def fetch_log_list(url: str) -> Dict[str, Any]:
+    """
+    Fetch and parse the CT log list from the given URL.
+
+    Args:
+        url: URL to fetch the log list from
+
+    Returns:
+        Parsed JSON data as a dictionary
+    """
+    with urllib.request.urlopen(url) as response:
+        data = response.read()
+    return json.loads(data)
+
+
+def generate_config_from_log_list(
+    log_list: Dict[str, Any], data_dir: str, torrent_dir: str, feed_url_base: str
+) -> str:
+    """
+    Generate a YAML config from the CT log list.
+
+    Args:
+        log_list: Parsed log list JSON
+        data_dir: Directory to save downloaded tiles
+        torrent_dir: Directory to store generated torrent files
+        feed_url_base: Base URL for the RSS feed
+
+    Returns:
+        YAML config as a string
+    """
+    config = {
+        "data_dir": data_dir,
+        "torrent_dir": torrent_dir,
+        "logs": [],
+    }
+
+    current_time = datetime.now().isoformat()
+
+    for operator in log_list.get("operators", []):
+        operator_name = operator.get("name", "Unknown")
+
+        # Process tiled logs
+        for tiled_log in operator.get("tiled_logs", []):
+
+            monitoring_url = tiled_log.get("monitoring_url")
+            if not monitoring_url:
+                logging.error("No url for tiled log, skipping")
+                continue
+
+            # Create sanitized name for the log
+            description = tiled_log.get("description", "")
+            log_name = (
+                description.replace(" ", "_")
+                .replace("'", "")
+                .replace("/", "_")
+                .lower()
+            )
+
+            feed_url = f"{feed_url_base}/{log_name}/feed.xml"
+
+            config["logs"].append(
+                {
+                    "name": log_name,
+                    "log_url": monitoring_url,
+                    "feed_url": feed_url,
+                    "frequency": 3600,  # Default to hourly checks
+                    "entry_limit": None,
+                    "delete_tiles": True,
+                }
+            )
+
+    return yaml.dump(config, default_flow_style=False,sort_keys=False)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Build torrents for Sunlight Logs",
@@ -97,6 +174,17 @@ if __name__ == "__main__":
         "--generate-config",
         action="store_true",
         help="Generate an example YAML configuration file and exit.",
+    )
+    parser.add_argument(
+        "--generate-config-from-log-list",
+        nargs="?",
+        const="https://www.gstatic.com/ct/log_list/v3/all_logs_list.json",
+        help="Generate a config from the CT log list (default: https://www.gstatic.com/ct/log_list/v3/all_logs_list.json)",
+    )
+    parser.add_argument(
+        "--feed-url-base",
+        default="http://127.0.0.1",
+        help="Base URL for the RSS feed when generating config from log list",
     )
     parser.add_argument(
         "--verbose",
@@ -138,8 +226,22 @@ logs:
         print(EXAMPLE_CONFIG)
         sys.exit(0)
 
+    if args.generate_config_from_log_list:
+        try:
+            log_list = fetch_log_list(args.generate_config_from_log_list)
+            config_yaml = generate_config_from_log_list(
+                log_list, "data", "torrents", args.feed_url_base
+            )
+            print(config_yaml)
+            sys.exit(0)
+        except Exception as e:
+            logging.error(f"Error generating config from log list: {e}")
+            sys.exit(1)
+
     if not args.config:
-        parser.error("--config is required unless --generate-config is used.")
+        parser.error(
+            "--config is required unless --generate-config or --generate-config-from-log-list is used."
+        )
 
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
@@ -160,10 +262,10 @@ logs:
         feed_url = log_config.get("feed_url")
 
         if not log_url or not feed_url or not name:
-            logging.warning(
-                "Skipping log entry with missing name, log_url or feed_url"
+            logging.error(
+                "Invalid log entry in config"
             )
-            continue
+            exit(-1)
 
         process = Process(
             target=log_loop,
