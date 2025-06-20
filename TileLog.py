@@ -30,14 +30,27 @@ FETCH_CHECKPOINT_BACKOFF = 60
 
 
 class TileLog:
-    def __init__(self, log_name, monitoring_url, storage_dir, torrent_dir, feed_url, max_size=None):
+    def __init__(
+        self,
+        log_name,
+        monitoring_url,
+        storage_dir,
+        torrent_dir,
+        feed_url,
+        max_size=None,
+    ):
         self.monitoring_url = monitoring_url.removesuffix("/")
 
         # Sanitize log_name to ensure it's suitable as a directory name
-        sanitized_name = re.sub(r'[\\/*?:"<>|]', '_', log_name)  # Replace invalid chars
+        sanitized_name = re.sub(r'[\\/*?:"<>|]', "_", log_name)  # Replace invalid chars
         sanitized_name = sanitized_name.strip()  # Remove leading/trailing whitespace
         if not sanitized_name:
-            sanitized_name = monitoring_url.removeprefix("https://").removesuffix("/").replace(".", "_").replace("/", "_")
+            sanitized_name = (
+                monitoring_url.removeprefix("https://")
+                .removesuffix("/")
+                .replace(".", "_")
+                .replace("/", "_")
+            )
 
         self.log_name = sanitized_name
         self.max_size = max_size
@@ -83,7 +96,9 @@ class TileLog:
                 existing_content = f.read()
 
             if existing_content != expected_content:
-                logging.error(f"Existing README at {readme_path} has different content than expected. Changing this file will cause issues with the existing torrents.")
+                logging.error(
+                    f"Existing README at {readme_path} has different content than expected. Changing this file will cause issues with the existing torrents."
+                )
                 exit(-1)
         else:
             # File doesn't exist, create it
@@ -134,22 +149,35 @@ class TileLog:
 
     # Functions for scraping logs
 
-    def __get_latest_checkpoint(self, refresh=False,iterations=0):
+    def __get_latest_checkpoint(self, refresh=False, iterations=0):
         if iterations > 20:
             logging.critical("Repeated failures to fetch a checkpoint, giving up.")
             exit(1)
         if refresh:
             try:
                 chkpt_url = f"{self.monitoring_url}/checkpoint"
-                with urllib.request.urlopen(chkpt_url) as r:
+                req = urllib.request.Request(
+                    chkpt_url,
+                    data=None,
+                    headers={
+                        "User-Agent": USER_AGENT,
+                        "Accept": "text/plain",
+                    },
+                )
+
+                with urllib.request.urlopen(req) as r:
                     chkpt = r.read().decode()
                     size = chkpt.splitlines()[1]
                     logging.debug(f"Fetched checkpoint of size {size}")
             except Exception as e:
                 logging.error(f"Failed to fetch checkpoint at {chkpt_url}", exc_info=e)
                 time.sleep(FETCH_CHECKPOINT_BACKOFF)
-                return self.__get_latest_checkpoint(refresh=refresh,iterations=iterations+1)
-            with open(os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8") as w:
+                return self.__get_latest_checkpoint(
+                    refresh=refresh, iterations=iterations + 1
+                )
+            with open(
+                os.path.join(self.checkpoints_dir, size), "w", encoding="utf-8"
+            ) as w:
                 w.write(chkpt)
         latest = max(
             (int(os.path.basename(x)) for x in glob(f"{self.checkpoints_dir}/" + "*"))
@@ -173,13 +201,13 @@ class TileLog:
             # "--retry-on-host-error",
             f"--directory-prefix={self.tiles_dir}",
             "--force-directories",
-            '--no-host-directories',
+            "--no-host-directories",
             "--compression=gzip,zstd,identity",
             "--no-verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
-            f'--cut-dirs={nested_dir_count}',
-            '--tcp-fastopen',
-            '--max-threads=5',
+            f"--cut-dirs={nested_dir_count}",
+            "--tcp-fastopen",
+            "--max-threads=5",
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index
@@ -244,9 +272,7 @@ class TileLog:
         for startIndex, endIndex in ranges:
             assert (
                 endIndex - startIndex
-            ) == ENTRIES_PER_LEAF_TORRENT, (
-                f"Elements in torrent must match {ENTRIES_PER_LEAF_TORRENT} (ENTRIES_PER_LEAF_TORRENT)"
-            )
+            ) == ENTRIES_PER_LEAF_TORRENT, f"Elements in torrent must match {ENTRIES_PER_LEAF_TORRENT} (ENTRIES_PER_LEAF_TORRENT)"
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = os.path.join(self.torrents_dir, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
@@ -328,7 +354,7 @@ class TileLog:
         # fe.torrent.contentlength(f"{size}")
         # fe.torrent.filename(t_name)
         fe.published(mtime)
-        #TODO Magnet Links
+        # TODO Magnet Links
         # fe.enclosure(
         #     url=f"magnet:?xt=urn:btih:{ih}",
         #     length=size,
@@ -337,7 +363,7 @@ class TileLog:
         base_url = self.feed_url.rsplit("/", 1)[0]
         fe.enclosure(
             url=f"{base_url}/{t_name}.torrent",
-            length=str(0), #TODO Size
+            length=str(0),  # TODO Size
             type="application/x-bittorrent",
         )
 

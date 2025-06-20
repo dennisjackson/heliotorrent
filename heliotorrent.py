@@ -66,7 +66,9 @@ def log_loop(
 
     # Wait for the offset time before starting the initial loop
     if frequency > 0:
-        logging.debug(f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)")
+        logging.debug(
+            f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)"
+        )
         time.sleep(offset)
 
     while True:
@@ -76,7 +78,9 @@ def log_loop(
 
         if missing_ranges:
             missing = sum([end - start for start, end in missing_ranges])
-            logging.info(f"Missing {missing} entries across {len(missing_ranges)} torrents. {(latest_size - missing) / latest_size * 100:.2f}% Complete")
+            logging.info(
+                f"Missing {missing} entries across {len(missing_ranges)} torrents. {(latest_size - missing) / latest_size * 100:.2f}% Complete"
+            )
             for start_index, stop_index in missing_ranges:
                 logging.debug(f"Processing range {start_index} to {stop_index}")
                 tl.download_tiles(start_index, stop_index)
@@ -151,10 +155,7 @@ def generate_config_from_log_list(
             # Create sanitized name for the log
             description = tiled_log.get("description", "")
             log_name = (
-                description.replace(" ", "_")
-                .replace("'", "")
-                .replace("/", "_")
-                .lower()
+                description.replace(" ", "_").replace("'", "").replace("/", "_").lower()
             )
 
             feed_url = f"{feed_url_base}/{log_name}/feed.xml"
@@ -170,7 +171,7 @@ def generate_config_from_log_list(
                 }
             )
 
-    return yaml.dump(config, default_flow_style=False,sort_keys=False)
+    return yaml.dump(config, default_flow_style=False, sort_keys=False)
 
 
 if __name__ == "__main__":
@@ -258,13 +259,16 @@ logs:
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    #TODO Check Wget2 is installed.
+    # TODO Check Wget2 is installed.
 
     # Extract global settings
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
 
     # Create and start a process for each log
+    logging.info(
+        f"Starting processes for {len(config.get("logs", []))} logs. Processes will sleep for a random offset before starting to minimize contention."
+    )
     processes = []
     for log_config in config.get("logs", []):
         if not isinstance(log_config, dict):
@@ -276,9 +280,7 @@ logs:
         feed_url = log_config.get("feed_url")
 
         if not log_url or not feed_url or not name:
-            logging.error(
-                "Invalid log entry in config"
-            )
+            logging.error("Invalid log entry in config")
             exit(-1)
 
         process = Process(

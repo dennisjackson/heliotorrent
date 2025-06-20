@@ -56,11 +56,7 @@ def test_download_tiles(tile_log):
     start_index = 0
     stop_index = 256  # Small range for testing
     tile_log.download_tiles(start_index, stop_index)
-    tile_files = [
-        f
-        for _, _, files in os.walk(tile_log.tiles_dir)
-        for f in files
-    ]
+    tile_files = [f for _, _, files in os.walk(tile_log.tiles_dir) for f in files]
     assert len(tile_files) > 0, "Tiles should be downloaded"
 
 

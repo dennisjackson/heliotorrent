@@ -184,14 +184,14 @@ def create_torrent_file(
         private=False,
         created_by=author,
         creation_date=datetime.now(),
-        webseeds="http://34.59.122.149/torrents/webseed/", #TODO Needs to be configurable
+        webseeds="http://34.59.122.149/torrents/webseed/",  # TODO Needs to be configurable
     )
     torrent.filepaths = paths
     torrent.name = name
 
     try:
         torrent.generate(threads=1)
-        torrent.write(out_path,validate=False)
+        torrent.write(out_path, validate=False)
         logging.info(
             f"Wrote {out_path} with content size {humanize.naturalsize(torrent.size)}"
         )
@@ -211,7 +211,7 @@ def get_torrent_file_info(torrent_path: str) -> Optional[Tuple[str, int]]:
     Returns:
         Tuple of (infohash, length) or None if extraction failed
     """
-    t = Torrent.read(torrent_path,validate=False)
+    t = Torrent.read(torrent_path, validate=False)
     return (t.infohash, t.size)
 
 
