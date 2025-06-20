@@ -320,14 +320,15 @@ class TileLog:
         logging.debug(f"Adding {t} to feed")
         mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
         t_name = os.path.basename(t).strip(".torrent")
-        (ih, size) = get_torrent_file_info(t)
+        # (ih, size) = get_torrent_file_info(t)
 
         fe = feed_generator.add_item()
         fe.title(t_name)
-        fe.torrent.infohash(ih)
-        fe.torrent.contentlength(f"{size}")
-        fe.torrent.filename(t_name)
+        # fe.torrent.infohash(ih)
+        # fe.torrent.contentlength(f"{size}")
+        # fe.torrent.filename(t_name)
         fe.published(mtime)
+        #TODO Magnet Links
         # fe.enclosure(
         #     url=f"magnet:?xt=urn:btih:{ih}",
         #     length=size,
@@ -336,7 +337,7 @@ class TileLog:
         base_url = self.feed_url.rsplit("/", 1)[0]
         fe.enclosure(
             url=f"{base_url}/{t_name}.torrent",
-            length=str(size),
+            length=str(0), #TODO Size
             type="application/x-bittorrent",
         )
 
