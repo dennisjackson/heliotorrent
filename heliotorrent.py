@@ -62,7 +62,7 @@ def log_loop(
     )
 
     # Generate a random offset between 0% and 20% of frequency
-    offset = frequency * random.uniform(0, 0.2)
+    offset = 60 * random.uniform(0, 1)
     adjusted_frequency = frequency + offset
 
     # Wait for the offset time before starting the initial loop
