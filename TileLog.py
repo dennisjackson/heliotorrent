@@ -342,6 +342,8 @@ class TileLog:
         )
 
     def make_rss_feed(self):
+        # TODO: Consider storing the feed generator object and just updating it
+        # when this is called?
         # TODO: Make an index.html file in a new function?
         fg = FeedGenerator()
         fg.load_extension("torrent")

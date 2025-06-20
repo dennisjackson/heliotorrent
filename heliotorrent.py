@@ -9,6 +9,7 @@ and generates RSS feeds for the log data.
 import argparse
 import logging
 import os
+import random
 import shutil
 import time
 import sys
@@ -60,6 +61,15 @@ def log_loop(
         max_size=entry_limit,
     )
 
+    # Generate a random offset between 0% and 20% of frequency
+    offset = frequency * random.uniform(0, 0.2)
+    adjusted_frequency = frequency + offset
+
+    # Wait for the offset time before starting the initial loop
+    if frequency > 0:
+        logging.debug(f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)")
+        time.sleep(offset)
+
     while True:
         start_time = time.time()
         latest_size = tl.get_latest_tree_size(refresh=True)
@@ -83,8 +93,9 @@ def log_loop(
         if frequency == 0:
             sys.exit(0)
 
-        if running_time < frequency:
-            to_sleep = frequency - running_time
+        # Using the adjusted frequency that includes the random offset
+        if running_time < adjusted_frequency:
+            to_sleep = adjusted_frequency - running_time
             logging.debug(f"Sleeping for {to_sleep:.2f} seconds")
             time.sleep(to_sleep)
 
