@@ -191,7 +191,7 @@ def create_torrent_file(
 
     try:
         torrent.generate(threads=1)
-        torrent.write(out_path)
+        torrent.write(out_path,validate=False)
         logging.info(
             f"Wrote {out_path} with content size {humanize.naturalsize(torrent.size)}"
         )
