@@ -61,7 +61,6 @@ def log_loop(
         max_size=entry_limit,
     )
 
-    # Generate a random offset between 0% and 20% of frequency
     offset = 60 * random.uniform(0, 1)
     adjusted_frequency = frequency + offset
 
