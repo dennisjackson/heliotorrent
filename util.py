@@ -190,9 +190,7 @@ def create_torrent_file(
     torrent.name = name
 
     try:
-        #TODO Enable progress reporting only in debug mode
-        torrent.generate(callback=None, interval=0.1)
-        print("\r" + " " * 80 + "\r", end="")  # Clear progress line
+        torrent.generate(threads=1)
         torrent.write(out_path)
         logging.info(
             f"Wrote {out_path} with content size {humanize.naturalsize(torrent.size)}"
