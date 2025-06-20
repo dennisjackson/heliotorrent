@@ -211,29 +211,8 @@ def get_torrent_file_info(torrent_path: str) -> Optional[Tuple[str, int]]:
     Returns:
         Tuple of (infohash, length) or None if extraction failed
     """
-    try:
-        with open(torrent_path, "rb") as f:
-            meta = bencodepy.decode(f.read())
-    except (bencodepy.DecodingError, IOError) as e:
-        logging.error(f"Error reading/decoding {torrent_path}: {e}")
-        return None
-
-    info = meta.get(b"info", {})
-    if not info:
-        logging.error(f"No info dict in torrent {torrent_path}")
-        return None
-
-    # Calculate info hash
-    info_encoded = bencodepy.encode(info)
-    infohash = hashlib.sha1(info_encoded).hexdigest()
-
-    # Calculate total length
-    if b"files" in info:  # multi-file torrent
-        length = sum(f.get(b"length", 0) for f in info[b"files"])
-    else:  # single-file torrent
-        length = info.get(b"length", 0)
-
-    return (infohash, length)
+    t = Torrent.read(torrent_path,validate=False)
+    return (t.infohash, t.size)
 
 
 def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
