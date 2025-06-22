@@ -15,3 +15,10 @@ logs:
   entry_limit: 1048576
   delete_tiles: true
 
+# TODO - See's a lot of 403s.
+# - name: cloudflare_cftest2025h1a
+#   log_url: https://static-ct-public-cftest2025h1a.cloudflareresearch.com/
+#   feed_url: http://127.0.0.1/cloudflare_cftest2025h1a/feed.xml
+#   frequency: 3600
+#   entry_limit: 1048576
+#   delete_tiles: true
