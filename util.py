@@ -223,11 +223,8 @@ def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
         paired_input: Tuple of (command, input_list)
     """
     command, input_list = paired_input
-    logging.debug(f"Running command: {' '.join(command)}")
-    if logging.getLogger().level <= logging.DEBUG:
-        with open('input_list.txt', 'w', encoding='utf-8') as f:
-            f.write("\n".join(input_list))
-        logging.debug("Input list written to input_list.txt")
+    logging.debug(f"Running command: {' '.join(command)}. First line of input: {input_list[0] if input_list else 'None'}")
+
     try:
         result = subprocess.run(
             command,
