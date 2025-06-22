@@ -223,14 +223,30 @@ def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
         paired_input: Tuple of (command, input_list)
     """
     command, input_list = paired_input
-
+    logging.debug(f"Running command: {' '.join(command)}")
+    if logging.getLogger().level <= logging.DEBUG:
+        with open('input_list.txt', 'w', encoding='utf-8') as f:
+            f.write("\n".join(input_list))
+        logging.debug("Input list written to input_list.txt")
     try:
-        subprocess.run(
+        result = subprocess.run(
             command,
             input="\n".join(input_list).encode(),
             stdout=sys.stdout,
-            stderr=sys.stderr,  # Use stderr for errors
+            stderr=subprocess.PIPE,  # Capture stderr output
             check=True,
         )
+
+        # Log any stderr output from successful command
+        if result.stderr:
+            logging.warning(f"Error running  {' '.join(command)}")
+            stderr_text = result.stderr.decode('utf-8', errors='replace')
+            for line in stderr_text.splitlines():
+                logging.warning(f"Command stderr: {line}")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error running {' '.join(command)}: {e.returncode}")
+        # Log any stderr output from the failed command
+        if e.stderr:
+            stderr_text = e.stderr.decode('utf-8', errors='replace')
+            for line in stderr_text.splitlines():
+                logging.error(f"Command stderr: {line}")

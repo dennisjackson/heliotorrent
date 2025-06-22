@@ -65,7 +65,7 @@ def log_loop(
     adjusted_frequency = frequency + offset
 
     # Wait for the offset time before starting the initial loop
-    if frequency > 0:
+    if frequency > 0 and not verbose:
         logging.debug(
             f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)"
         )

@@ -203,7 +203,7 @@ class TileLog:
             "--force-directories",
             "--no-host-directories",
             "--compression=gzip,zstd,identity",
-            "--no-verbose" if log_level is logging.DEBUG else "--quiet",
+            "--verbose" if log_level is logging.DEBUG else "--quiet",
             f'--user-agent="{USER_AGENT}"',
             f"--cut-dirs={nested_dir_count}",
             "--tcp-fastopen",
@@ -231,7 +231,6 @@ class TileLog:
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             executor.map(run_scraper, chunks)
-
         logging.debug(
             f"Fetched all tiles between entries {start_index} and {stop_index}"
         )
