@@ -150,7 +150,12 @@ def show_progress(torrent: Torrent, stage: str, current: int, total: int) -> Non
 
 
 def create_torrent_file(
-    name: str, author: str, paths: List[str], trackers: List[str], out_path: str
+    name: str,
+    author: str,
+    paths: List[str],
+    trackers: List[str],
+    out_path: str,
+    webseeds: Optional[List[str]] = None,
 ) -> Optional[Torrent]:
     """
     Create a torrent file from the given paths.
@@ -161,6 +166,7 @@ def create_torrent_file(
         paths: List of file paths to include
         trackers: List of tracker URLs
         out_path: Path to save the torrent file
+        webseeds: List of webseed URLs
 
     Returns:
         The created Torrent object or None if creation failed
@@ -184,7 +190,7 @@ def create_torrent_file(
         private=False,
         created_by=author,
         creation_date=datetime.now(),
-        webseeds="http://34.59.122.149/torrents/webseed/",  # TODO Needs to be configurable
+        webseeds=webseeds,
     )
     torrent.filepaths = paths
     torrent.name = name

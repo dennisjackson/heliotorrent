@@ -38,6 +38,7 @@ class TileLog:
         torrent_dir,
         feed_url,
         max_size=None,
+        webseeds=None,
     ):
         self.monitoring_url = monitoring_url.removesuffix("/")
 
@@ -55,6 +56,7 @@ class TileLog:
         self.log_name = sanitized_name
         self.max_size = max_size
         self.feed_url = feed_url
+        self.webseeds = webseeds
 
         self.storage_dir = os.path.join(storage_dir, self.log_name)
         self.checkpoints_dir = os.path.join(self.storage_dir, "checkpoint")
@@ -280,7 +282,12 @@ class TileLog:
             paths = [os.path.join(self.storage_dir, x) for x in paths]
             paths += [os.path.join(self.storage_dir, "README.md")]
             create_torrent_file(
-                name, "HelioTorrent " + VERSION, paths, self.trackers, tp
+                name,
+                "HelioTorrent " + VERSION,
+                paths,
+                self.trackers,
+                tp,
+                webseeds=self.webseeds,
             )
         logging.debug(f"Generated L01 torrents for ranges: {ranges}")
 
@@ -298,7 +305,12 @@ class TileLog:
                     "max_size is set, so upper tree torrent may be missing files"
                 )
             create_torrent_file(
-                name, "HelioTorrent " + VERSION, paths, self.trackers, tp
+                name,
+                "HelioTorrent " + VERSION,
+                paths,
+                self.trackers,
+                tp,
+                webseeds=self.webseeds,
             )
             logging.info(f"Generated upper tree torrent: {tp}")
 

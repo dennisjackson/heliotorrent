@@ -35,6 +35,7 @@ def log_loop(
     entry_limit: Optional[int],
     verbose: bool,
     delete_tiles: bool,
+    webseeds: Optional[List[str]] = None,
 ) -> None:
     """
     Main processing loop for a single log.
@@ -49,6 +50,7 @@ def log_loop(
         entry_limit: Maximum number of entries to fetch
         verbose: Whether to emit verbose logs
         delete_tiles: Whether to delete used tiles after processing
+        webseeds: A list of webseed URLs to add to torrents
     """
     fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
     coloredlogs.install(level="DEBUG" if verbose else "INFO", fmt=fmt)
@@ -59,6 +61,7 @@ def log_loop(
         torrent_dir=torrent_dir,
         feed_url=feed_url,
         max_size=entry_limit,
+        webseeds=webseeds,
     )
 
     offset = 60 * random.uniform(0, 1)
@@ -168,6 +171,7 @@ def generate_config_from_log_list(
                     "frequency": 3600,  # Default to hourly checks
                     "entry_limit": None,
                     "delete_tiles": True,
+                    "webseeds": [],
                 }
             )
 
@@ -212,6 +216,9 @@ if __name__ == "__main__":
 data_dir: "data"
 # Directory to store generated torrent files
 torrent_dir: "torrents"
+# Global webseeds to add to all torrents. This can be overridden on a per-log basis.
+webseeds:
+  - "http://global.webseed.example.com/webseed/"
 
 # List of logs to monitor
 logs:
@@ -227,12 +234,21 @@ logs:
     entry_limit: null
     # Delete used tiles after processing
     delete_tiles: false
+    # Webseeds to add to the torrents. This will override the global webseeds setting.
+    webseeds:
+      - "http://webseed.example.com/"
 
 # You can add more logs here. Optional keys will use default values.
 #  - name: "another-log"
 #    log_url: "https://another.log.server/log/"
 #    feed_url: "http://127.0.0.1/another.log.server.xml"
-#    # frequency, entry_limit, and delete_tiles are optional.
+#    # This log will use the global webseeds setting.
+#
+#  - name: "log-with-no-webseeds"
+#    log_url: "https://no.seeds.please/log/"
+#    feed_url: "http://127.0.0.1/no.seeds.please.xml"
+#    # This will override the global setting and result in no webseeds.
+#    webseeds: []
 """
 
     if args.generate_config:
@@ -264,10 +280,11 @@ logs:
     # Extract global settings
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
+    global_webseeds = config.get("webseeds")
 
     # Create and start a process for each log
     logging.info(
-        f"Starting processes for {len(config.get("logs", []))} logs. Processes will sleep for a random offset before starting to minimize contention."
+        f"Starting processes for {len(config.get('logs', []))} logs. Processes will sleep for a random offset before starting to minimize contention."
     )
     processes = []
     for log_config in config.get("logs", []):
@@ -283,6 +300,8 @@ logs:
             logging.error("Invalid log entry in config")
             exit(-1)
 
+        webseeds = log_config.get("webseeds", global_webseeds)
+
         process = Process(
             target=log_loop,
             daemon=True,
@@ -296,6 +315,7 @@ logs:
                 log_config.get("entry_limit"),
                 args.verbose,
                 log_config.get("delete_tiles", False),
+                webseeds,
             ),
         )
         processes.append(process)
