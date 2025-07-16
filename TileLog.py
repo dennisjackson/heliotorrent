@@ -20,6 +20,7 @@ from util import (
     run_scraper,
 )
 
+# TODO This should be configurable
 VERSION = "v0.0.0"
 USER_AGENT = f"Heliotorrent {VERSION} Contact: scraper-reports@dennis-jackson.uk"
 ENTRIES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
@@ -357,37 +358,22 @@ class TileLog:
         logging.debug(f"Adding {t} to feed")
         mtime = datetime.fromtimestamp(os.path.getmtime(t), tz=timezone.utc)
         t_name = os.path.basename(t).strip(".torrent")
-        # (ih, size) = get_torrent_file_info(t)
-
         fe = feed_generator.add_item()
         fe.title(t_name)
-        # fe.torrent.infohash(ih)
-        # fe.torrent.contentlength(f"{size}")
-        # fe.torrent.filename(t_name)
         fe.published(mtime)
-        # TODO Magnet Links
-        # fe.enclosure(
-        #     url=f"magnet:?xt=urn:btih:{ih}",
-        #     length=size,
-        #     type="application/x-bittorrent",
-        # )
         base_url = self.feed_url.rsplit("/", 1)[0]
         fe.enclosure(
             url=f"{base_url}/{t_name}.torrent",
-            length=str(0),  # TODO Size
+            length=str(os.path.getsize(t)),
             type="application/x-bittorrent",
         )
 
     def make_rss_feed(self):
-        # TODO: Consider storing the feed generator object and just updating it
-        # when this is called?
-        # TODO: Make an index.html file in a new function?
         fg = FeedGenerator()
         fg.load_extension("torrent")
         fg.title(self.log_name)
         fg.link(href=self.feed_url)
-        fg.description("TODO")
-        # TODO Make different feeds for data level, tile and both?
+        fg.description("Heliotorrent version " + VERSION + " - Feed for " + self.log_name)
         paths = glob(os.path.join(self.torrents_dir, "*.torrent"))
         for p in paths:
             self.add_torrent_to_feed(fg, p)
