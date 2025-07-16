@@ -140,6 +140,9 @@ def generate_config_from_log_list(
         "data_dir": data_dir,
         "torrent_dir": torrent_dir,
         "feed_url_base": feed_url_base,
+        "frequency": 3600,
+        "entry_limit": None,
+        "delete_tiles": True,
         "logs": [],
     }
 
@@ -166,10 +169,6 @@ def generate_config_from_log_list(
                 {
                     "name": log_name,
                     "log_url": monitoring_url,
-                    "frequency": 3600,  # Default to hourly checks
-                    "entry_limit": None,
-                    "delete_tiles": True,
-                    "webseeds": [],
                 }
             )
 
@@ -216,6 +215,12 @@ data_dir: "data"
 torrent_dir: "torrents"
 # Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
 feed_url_base: "http://127.0.0.1/torrents"
+# How often to run in seconds (0 for one-time run)
+frequency: 300
+# Maximum number of entries to fetch (null for no limit)
+entry_limit: null
+# Delete used tiles after processing
+delete_tiles: false
 # Global webseeds to add to all torrents. This can be overridden on a per-log basis.
 webseeds:
   - "http://global.webseed.example.com/webseed/"
@@ -226,12 +231,10 @@ logs:
     name: "tuscolo2026h1"
     # URL of the log to scrape
     log_url: "https://tuscolo2026h1.skylight.geomys.org/"
-    # How often to run in seconds (0 for one-time run)
-    frequency: 300
-    # Maximum number of entries to fetch (null for no limit)
-    entry_limit: null
-    # Delete used tiles after processing
-    delete_tiles: false
+    # The following values can be uncommented to override the global settings.
+    # frequency: 300
+    # entry_limit: null
+    # delete_tiles: false
     # Webseeds to add to the torrents. This will override the global webseeds setting.
     webseeds:
       - "http://webseed.example.com/"
@@ -282,6 +285,9 @@ logs:
     torrent_dir = config.get("torrent_dir", "torrents")
     global_webseeds = config.get("webseeds")
     feed_url_base = config.get("feed_url_base")
+    frequency = config.get("frequency", 300)
+    entry_limit = config.get("entry_limit")
+    delete_tiles = config.get("delete_tiles", False)
 
     # Create and start a process for each log
     logging.info(
@@ -298,34 +304,28 @@ logs:
         feed_url = log_config.get("feed_url")
 
         if not feed_url and feed_url_base:
-            feed_url = f"{feed_url_base}/{name}/feed.xml"
+            feed_url = f"{feed_url_base.rstrip('/')}/{name}/feed.xml"
 
-        if not log_url or not feed_url or not name:
-            logging.error(
-                f"Invalid log entry in config for log '{name}': missing log_url, feed_url, or name. A global feed_url_base should be set if feed_url is not specified per-log."
-            )
-            exit(-1)
-
+        # Use per-log webseeds if available, otherwise use global webseeds
         webseeds = log_config.get("webseeds", global_webseeds)
 
-        process = Process(
+        p = Process(
             target=log_loop,
-            daemon=True,
             args=(
                 name,
                 log_url,
-                log_config.get("frequency", 300),
+                log_config.get("frequency", frequency),
                 feed_url,
                 data_dir,
                 torrent_dir,
-                log_config.get("entry_limit"),
+                log_config.get("entry_limit", entry_limit),
                 args.verbose,
-                log_config.get("delete_tiles", False),
+                log_config.get("delete_tiles", delete_tiles),
                 webseeds,
             ),
         )
-        processes.append(process)
-        process.start()
+        processes.append(p)
+        p.start()
 
     # Wait for all processes to complete
     for process in processes:
