@@ -139,6 +139,7 @@ def generate_config_from_log_list(
     config = {
         "data_dir": data_dir,
         "torrent_dir": torrent_dir,
+        "feed_url_base": feed_url_base,
         "logs": [],
     }
 
@@ -161,13 +162,10 @@ def generate_config_from_log_list(
                 description.replace(" ", "_").replace("'", "").replace("/", "_").lower()
             )
 
-            feed_url = f"{feed_url_base}/{log_name}/feed.xml"
-
             config["logs"].append(
                 {
                     "name": log_name,
                     "log_url": monitoring_url,
-                    "feed_url": feed_url,
                     "frequency": 3600,  # Default to hourly checks
                     "entry_limit": None,
                     "delete_tiles": True,
@@ -200,7 +198,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feed-url-base",
-        default="http://127.0.0.1",
+        default="http://127.0.0.1/torrents",
         help="Base URL for the RSS feed when generating config from log list",
     )
     parser.add_argument(
@@ -216,6 +214,8 @@ if __name__ == "__main__":
 data_dir: "data"
 # Directory to store generated torrent files
 torrent_dir: "torrents"
+# Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
+feed_url_base: "http://127.0.0.1/torrents"
 # Global webseeds to add to all torrents. This can be overridden on a per-log basis.
 webseeds:
   - "http://global.webseed.example.com/webseed/"
@@ -226,8 +226,6 @@ logs:
     name: "tuscolo2026h1"
     # URL of the log to scrape
     log_url: "https://tuscolo2026h1.skylight.geomys.org/"
-    # URL for the RSS feed
-    feed_url: "http://127.0.0.1/tuscolo2026h1.skylight.geomys.org.xml"
     # How often to run in seconds (0 for one-time run)
     frequency: 300
     # Maximum number of entries to fetch (null for no limit)
@@ -241,14 +239,16 @@ logs:
 # You can add more logs here. Optional keys will use default values.
 #  - name: "another-log"
 #    log_url: "https://another.log.server/log/"
-#    feed_url: "http://127.0.0.1/another.log.server.xml"
 #    # This log will use the global webseeds setting.
 #
 #  - name: "log-with-no-webseeds"
 #    log_url: "https://no.seeds.please/log/"
-#    feed_url: "http://127.0.0.1/no.seeds.please.xml"
 #    # This will override the global setting and result in no webseeds.
 #    webseeds: []
+#
+#  - name: "log-with-custom-feed"
+#    log_url: "https://another.log.server/log/"
+#    feed_url: "http://127.0.0.1/custom.xml"
 """
 
     if args.generate_config:
@@ -281,6 +281,7 @@ logs:
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
     global_webseeds = config.get("webseeds")
+    feed_url_base = config.get("feed_url_base")
 
     # Create and start a process for each log
     logging.info(
@@ -296,8 +297,13 @@ logs:
         log_url = log_config.get("log_url")
         feed_url = log_config.get("feed_url")
 
+        if not feed_url and feed_url_base:
+            feed_url = f"{feed_url_base}/{name}/feed.xml"
+
         if not log_url or not feed_url or not name:
-            logging.error("Invalid log entry in config")
+            logging.error(
+                f"Invalid log entry in config for log '{name}': missing log_url, feed_url, or name. A global feed_url_base should be set if feed_url is not specified per-log."
+            )
             exit(-1)
 
         webseeds = log_config.get("webseeds", global_webseeds)
