@@ -2,6 +2,7 @@ import argparse
 import glob
 import os
 import subprocess
+from tqdm import tqdm
 
 def find_torrent_files(directory):
     """Recursively finds all .torrent files in a directory."""
@@ -32,13 +33,13 @@ def main():
 
     print(f"Found {len(torrent_files)} .torrent files. Updating web seeds...")
 
-    for torrent_file in torrent_files:
+    for torrent_file in tqdm(torrent_files):
         command = ["torrentfile", "edit", torrent_file, "--web-seed"] + urls
         print(f"Processing: {torrent_file}")
         try:
             # The torrentfile library modifies the file in place.
             subprocess.run(command, check=True, capture_output=True, text=True)
-            print("  -> Successfully updated web seeds.")
+            # print("  -> Successfully updated web seeds.")
         except subprocess.CalledProcessError as e:
             print(f"  -> Failed to update {os.path.basename(torrent_file)}:")
             print(f"     Command: {' '.join(command)}")
