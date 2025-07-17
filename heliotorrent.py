@@ -73,6 +73,7 @@ def log_loop(
             f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)"
         )
         time.sleep(offset)
+    tl.make_rss_feed()
 
     while True:
         start_time = time.time()
