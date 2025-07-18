@@ -88,4 +88,4 @@ WebSeeds do not have strict uptime requirements, however if no webseeds or regul
 
 ## Consuming Torrents
 
-Clients consuiming torrents.
+Clients consuming torrents.
