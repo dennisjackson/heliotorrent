@@ -12,7 +12,7 @@ futures = "0.3"
 tokio-util = "0.7"
 reqwest = { version = "0.12.22", features = ["http2", "gzip","rustls-tls"]}
 tracing = "0.1.41"
-tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
+tracing-subscriber = {version = "0.3.20", features = ["env-filter"]}
 clap = { version = "4.4", features = ["derive"] }
 tempfile = "3.8"
 zstd = "0.13"
