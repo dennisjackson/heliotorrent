@@ -81,4 +81,5 @@ Stop the service gracefully to allow workers to finish writing torrents. If you 
 
 ## Heliostat
 
+`cargo build --release`
 `git subtree pull --prefix=heliostat git@github.com:dennisjackson/heliostat.git master --squash`
