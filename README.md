@@ -6,9 +6,10 @@ Serve a Sunlight Transparency log via torrents.
 
 TODO: uv flow
 
-## Tests
+## Development
 
-* `uv run pytest`. All tests should pass
+* `uv run pytest`. All tests should pass.
+*
 
 ## Dependencies
 
