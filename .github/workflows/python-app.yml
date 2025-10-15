@@ -64,4 +64,4 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run config smoke test
-        run: uv run python heliotorrent.py --config test_config_ci.yaml --verbose
+        run: uv run python heliotorrent.py --config test_config.yaml --verbose
