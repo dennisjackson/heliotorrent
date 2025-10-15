@@ -96,6 +96,19 @@ class TileLog:
         self._install_static_assets()
         self.generate_readme()
 
+    @staticmethod
+    def _format_timestamp(timestamp):
+        """Return YYYY-MM-DD HH:MM in UTC for ISO timestamps; fallback to original on error."""
+        if not timestamp:
+            return "Unknown"
+        try:
+            dt = datetime.fromisoformat(timestamp)
+        except (TypeError, ValueError):
+            return timestamp
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M")
+
     def _install_static_assets(self):
         if not os.path.exists(DEFAULT_TORRENT_STYLESHEET):
             logging.warning(
@@ -443,6 +456,7 @@ class TileLog:
         feed_host = feed_parts.netloc or feed_parts.path or feed_url
         torrents = manifest["torrents"]
         torrent_count = len(torrents)
+        last_updated_display = self._format_timestamp(manifest.get("last_updated"))
 
         html_lines = [
             "<!DOCTYPE html>",
@@ -461,7 +475,7 @@ class TileLog:
             '          <span class="icon icon-log" aria-hidden="true"></span>',
             f"          {self.log_name} Torrents",
             "        </h1>",
-            f'        <p class="page-subtitle">Last updated {manifest["last_updated"]}</p>',
+            f"        <p class=\"page-subtitle\">Last updated {last_updated_display}</p>",
             '        <div class="actions">',
             f'          <a href="{feed_url}" class="icon-link is-primary">',
             '            <span class="icon icon-rss" aria-hidden="true"></span>',
@@ -497,6 +511,7 @@ class TileLog:
 
             for entry in torrents:
                 torrent_name = os.path.basename(entry["torrent_url"])
+                created_display = self._format_timestamp(entry.get("creation_time"))
                 html_lines.extend(
                     [
                         "            <tr>",
@@ -508,7 +523,7 @@ class TileLog:
                         "              </td>",
                         "              <td>",
                         '                <div class="cell-stack">',
-                        f"                  <span>{entry['creation_time']}</span>",
+                        f"                  <span>{created_display}</span>",
                         "                  <small>UTC</small>",
                         "                </div>",
                         "              </td>",
@@ -614,8 +629,8 @@ class TileLog:
         torrents_label = "torrent" if total_torrents == 1 else "torrents"
         if total_logs:
             subtitle = (
-                f"Browse {total_logs} {logs_label}. "
-                f"Currently tracking {total_torrents} {torrents_label}."
+                f"Tracking {total_logs} {logs_label} "
+                f"with {total_torrents} {torrents_label}."
             )
         else:
             subtitle = "No torrent feeds have been generated yet."

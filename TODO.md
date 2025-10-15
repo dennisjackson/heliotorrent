@@ -3,7 +3,7 @@
 
 ## Further Notes
 
-- feed.json - as an alternative to xml for non-torrent clients.
+- feed.json - as an alternative to xml for non-torrent clients. Done.
 - Status page which checks index / tiles / torrents / rss?
 - Compress (zip?) - NO. gzip not deterministic.
 - License?
