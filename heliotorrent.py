@@ -7,15 +7,17 @@ and generates RSS feeds for the log data.
 """
 
 import argparse
+import json
 import logging
 import random
 import shutil
-import time
+import subprocess
 import sys
+import time
 import urllib.request
-import json
 from multiprocessing import Process
-from typing import List, Optional, Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import coloredlogs
 import yaml
@@ -73,7 +75,11 @@ def log_loop(
         logging.debug(
             f"Applying initial offset wait of {offset:.2f} seconds (frequency will be {adjusted_frequency:.2f}s)"
         )
-        time.sleep(offset)
+        try:
+            time.sleep(offset)
+        except InterruptedError:
+            logging.warning("Sleep interrupted; shutting down.")
+            sys.exit(0)
     tl.make_rss_feed()
 
     while True:
@@ -105,7 +111,11 @@ def log_loop(
         if running_time < adjusted_frequency:
             to_sleep = adjusted_frequency - running_time
             logging.debug(f"Sleeping for {to_sleep:.2f} seconds")
-            time.sleep(to_sleep)
+            try:
+                time.sleep(to_sleep)
+            except InterruptedError:
+                logging.warning("Sleep interrupted; shutting down.")
+                sys.exit(0)
 
 
 def fetch_log_list(url: str) -> Dict[str, Any]:
@@ -207,7 +217,14 @@ if __name__ == "__main__":
         help="Emit verbose logs",
         action="store_true",
     )
+    parser.add_argument(
+        "--heliostat",
+        help="Path or executable name for the heliostat binary. When omitted, heliostat is not started.",
+    )
     args = parser.parse_args()
+
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(level=logging.INFO)
 
     EXAMPLE_CONFIG = """\
 # Global settings for Heliotorrent
@@ -279,6 +296,27 @@ logs:
         logging.error("wget2 is required but not installed or not in PATH.")
         sys.exit(1)
 
+    heliostat_process: Optional[subprocess.Popen[str]] = None
+    if args.heliostat:
+        heliostat_candidate = Path(args.heliostat)
+        if not heliostat_candidate.is_file():
+            logging.error(
+                f"heliostat binary '{args.heliostat}' not found. Provide a valid path or ensure it is on PATH."
+            )
+            sys.exit(1)
+
+        try:
+            heliostat_process = subprocess.Popen(
+                [heliostat_candidate, "--config-file", args.config],
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                text=True,
+                bufsize=1,
+            )
+        except OSError as exc:
+            logging.error(f"Failed to start heliostat: {exc}")
+            sys.exit(1)
+
     # Extract global settings
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
@@ -338,6 +376,9 @@ logs:
         processes.append(p)
         p.start()
 
-    # Wait for all processes to complete
-    for process in processes:
-        process.join()
+    try:
+        for process in processes:
+            process.join()
+    except KeyboardInterrupt:
+        logging.info("Keyboard interrupt received; shutting down.")
+        sys.exit(130)
