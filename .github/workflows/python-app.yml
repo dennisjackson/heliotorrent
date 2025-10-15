@@ -63,24 +63,5 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: Prepare CI config
-        run: |
-          uv run python - <<'PY'
-          import pathlib
-          import yaml
-
-          source = pathlib.Path("test_config.yaml")
-          target = pathlib.Path("test_config_ci.yaml")
-
-          config = yaml.safe_load(source.read_text())
-          config["frequency"] = 0
-
-          for log in config.get("logs", []):
-              if isinstance(log, dict):
-                  log["frequency"] = 0
-
-          target.write_text(yaml.safe_dump(config, sort_keys=False))
-          PY
-
       - name: Run config smoke test
         run: uv run python heliotorrent.py --config test_config_ci.yaml --verbose

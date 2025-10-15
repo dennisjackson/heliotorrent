@@ -1,13 +1,9 @@
 data_dir: data
 torrent_dir: torrents
-frequency: 3600
+frequency: 0
 entry_limit: 1048576
 delete_tiles: true
 logs:
-- name: lets_encrypt_twig2025h2b
-  log_url: https://twig.ct.letsencrypt.org/2025h2b/
-  feed_url: http://127.0.0.1/lets_encrypt_twig2025h2b/feed.xml
-
 - name: geomys_tuscolo2025h2
   log_url: https://tuscolo2025h2.skylight.geomys.org/
   feed_url: http://127.0.0.1/geomys_tuscolo2025h2/feed.xml
