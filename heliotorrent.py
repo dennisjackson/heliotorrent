@@ -20,7 +20,7 @@ from typing import List, Optional, Dict, Any
 import coloredlogs
 import yaml
 
-from TileLog import TileLog
+from TileLog import TileLog, build_user_agent
 
 
 def log_loop(
@@ -33,6 +33,7 @@ def log_loop(
     entry_limit: Optional[int],
     verbose: bool,
     delete_tiles: bool,
+    user_agent: str,
     webseeds: Optional[List[str]] = None,
 ) -> None:
     """
@@ -48,6 +49,7 @@ def log_loop(
         entry_limit: Maximum number of entries to fetch
         verbose: Whether to emit verbose logs
         delete_tiles: Whether to delete used tiles after processing
+        user_agent: User-Agent header / identifier for outbound requests
         webseeds: A list of webseed URLs to add to torrents
     """
     fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
@@ -60,6 +62,7 @@ def log_loop(
         feed_url=feed_url,
         max_size=entry_limit,
         webseeds=webseeds,
+        user_agent=user_agent,
     )
 
     offset = 60 * random.uniform(0, 1)
@@ -139,6 +142,7 @@ def generate_config_from_log_list(
         "data_dir": data_dir,
         "torrent_dir": torrent_dir,
         "feed_url_base": feed_url_base,
+        "scraper_contact_email": "scraper@example.com",
         "frequency": 3600,
         "entry_limit": None,
         "delete_tiles": True,
@@ -211,8 +215,13 @@ if __name__ == "__main__":
 data_dir: "data"
 # Directory to store generated torrent files
 torrent_dir: "torrents"
+https_port: 8443,
+http_port: 8080,
+#tls_cert: Path,
+#tls_key: Path,
 # Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
 feed_url_base: "http://127.0.0.1/torrents"
+scraper_contact_email: null
 # How often to run in seconds (0 for one-time run, 3600 is a good default)
 frequency: 0
 # Maximum number of entries to fetch (null for no limit, 1048576 for 1 torrent)
@@ -278,6 +287,17 @@ logs:
     frequency = config.get("frequency", 300)
     entry_limit = config.get("entry_limit")
     delete_tiles = config.get("delete_tiles", False)
+    contact_email = config.get("scraper_contact_email")
+    if contact_email is None or not str(contact_email).strip():
+        logging.error(
+            "scraper_contact_email must be set to a non-empty string in the config."
+        )
+        sys.exit(1)
+    try:
+        user_agent = build_user_agent(str(contact_email))
+    except ValueError as exc:
+        logging.error(str(exc))
+        sys.exit(1)
 
     # Create and start a process for each log
     logging.info(
@@ -311,6 +331,7 @@ logs:
                 log_config.get("entry_limit", entry_limit),
                 args.verbose,
                 log_config.get("delete_tiles", delete_tiles),
+                user_agent,
                 webseeds,
             ),
         )

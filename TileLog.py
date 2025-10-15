@@ -21,9 +21,15 @@ from util import (
     run_scraper,
 )
 
-# TODO This should be configurable
 VERSION = "v0.0.0"
-USER_AGENT = f"Heliotorrent {VERSION} Contact: scraper-reports@dennis-jackson.uk"
+
+
+def build_user_agent(contact_email: str) -> str:
+    email = (contact_email or "").strip()
+    if not email:
+        raise ValueError("Contact email must be provided to build a user agent.")
+    return f"Heliotorrent {VERSION} Contact: {email}"
+
 ENTRIES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
 TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
@@ -44,8 +50,12 @@ class TileLog:
         feed_url,
         max_size=None,
         webseeds=None,
+        user_agent=None,
     ):
+        if not user_agent:
+            raise ValueError("user_agent must be provided when creating TileLog.")
         self.monitoring_url = monitoring_url.removesuffix("/")
+        self.user_agent = user_agent
 
         # Sanitize log_name to ensure it's suitable as a directory name
         sanitized_name = re.sub(r'[\\/*?:"<>|]', "_", log_name)  # Replace invalid chars
@@ -200,7 +210,7 @@ class TileLog:
                     chkpt_url,
                     data=None,
                     headers={
-                        "User-Agent": USER_AGENT,
+                        "User-Agent": self.user_agent,
                         "Accept": "text/plain",
                     },
                 )
@@ -244,7 +254,7 @@ class TileLog:
             "--no-host-directories",
             "--compression=gzip,zstd,identity",
             "--verbose" if log_level is logging.DEBUG else "--quiet",
-            f'--user-agent="{USER_AGENT}"',
+            f'--user-agent="{self.user_agent}"',
             f"--cut-dirs={nested_dir_count}",
             "--tcp-fastopen",
             "--max-threads=5",

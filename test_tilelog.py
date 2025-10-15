@@ -4,7 +4,7 @@ import shutil
 import sys
 import pytest
 import logging
-from TileLog import TileLog
+from TileLog import TileLog, build_user_agent
 
 
 @pytest.fixture
@@ -35,6 +35,7 @@ def tile_log(monkeypatch):
         torrent_dir=torrent_dir,
         feed_url=feed_url,
         max_size=max_size,
+        user_agent=build_user_agent(contact_email="Test CI"),
     )
 
     yield tile_log_instance
