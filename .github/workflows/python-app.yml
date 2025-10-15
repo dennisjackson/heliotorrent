@@ -1,4 +1,4 @@
-name: Python application
+name: Default Jobs
 
 on:
   push:
@@ -11,13 +11,14 @@ on:
 
 jobs:
   uv-setup:
-    name: python
+    name: Lint and Pytest
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v5
 
-      - uses: awalsh128/cache-apt-pkgs-action@latest
+      - name: Install and cache wget2
+        uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: wget2
           version: "@latest"
@@ -40,7 +41,7 @@ jobs:
         run: uv run pytest
 
   config-run:
-    name: config
+    name: Config Smoke Test
     runs-on: ubuntu-latest
     needs: uv-setup
 
@@ -64,4 +65,4 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run config smoke test
-        run: uv run python heliotorrent.py --config test_config.yaml --verbose
+        run: uv run python heliotorrent.py --config test_config.yaml
