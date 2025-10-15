@@ -63,7 +63,8 @@ class TileLog:
         self.checkpoints_dir = os.path.join(self.storage_dir, "checkpoint")
         self.tiles_dir = os.path.join(self.storage_dir, "tile")
 
-        self.torrents_dir = os.path.join(torrent_dir, self.log_name)
+        self.torrents_root_dir = torrent_dir
+        self.torrents_dir = os.path.join(self.torrents_root_dir, self.log_name)
 
         if max_size:
             logging.warning(
@@ -463,6 +464,122 @@ class TileLog:
             html_file.write(html_content)
         logging.info(f"Wrote {html_path} for torrent index")
 
+    def write_root_index(self):
+        try:
+            entries = sorted(
+                entry
+                for entry in os.listdir(self.torrents_root_dir)
+                if os.path.isdir(os.path.join(self.torrents_root_dir, entry))
+            )
+        except FileNotFoundError:
+            logging.warning(
+                f"Torrents root directory missing: {self.torrents_root_dir}"
+            )
+            return
+
+        table_rows = []
+        for entry in entries:
+            dir_path = os.path.join(self.torrents_root_dir, entry)
+            manifest_path = os.path.join(dir_path, "torrents.json")
+            feed_path = os.path.join(dir_path, "feed.xml")
+            html_path = os.path.join(dir_path, "index.html")
+            torrent_files = glob(os.path.join(dir_path, "*.torrent"))
+
+            manifest_data = None
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path, "r", encoding="utf-8") as manifest_file:
+                        manifest_data = json.load(manifest_file)
+                except (json.JSONDecodeError, OSError) as exc:
+                    logging.warning(
+                        f"Unable to load manifest for {entry}: {exc}", exc_info=True
+                    )
+
+            display_name = (
+                manifest_data.get("log_name")
+                if manifest_data and manifest_data.get("log_name")
+                else entry
+            )
+            torrent_count = (
+                len(manifest_data.get("torrents", []))
+                if manifest_data
+                else len(torrent_files)
+            )
+
+            log_link = f"{entry}/index.html" if os.path.exists(html_path) else None
+            rss_link = f"{entry}/feed.xml" if os.path.exists(feed_path) else None
+            json_link = f"{entry}/torrents.json" if os.path.exists(manifest_path) else None
+
+            table_rows.append(
+                {
+                    "name": display_name,
+                    "log_link": log_link,
+                    "rss_link": rss_link,
+                    "json_link": json_link,
+                    "torrent_count": torrent_count,
+                }
+            )
+
+        html_lines = [
+            "<!DOCTYPE html>",
+            '<html lang="en">',
+            "<head>",
+            '  <meta charset="utf-8">',
+            "  <title>Heliotorrent Feeds</title>",
+            "</head>",
+            "<body>",
+            "  <h1>Heliotorrent Feeds</h1>",
+            "  <table>",
+            "    <thead>",
+            "      <tr>",
+            "        <th>Log</th>",
+            "        <th>Torrents</th>",
+            "        <th>RSS</th>",
+            "        <th>JSON</th>",
+            "      </tr>",
+            "    </thead>",
+            "    <tbody>",
+        ]
+
+        for row in table_rows:
+            name_cell = (
+                f'<a href="{row["log_link"]}">{row["name"]}</a>'
+                if row["log_link"]
+                else row["name"]
+            )
+            rss_cell = (
+                f'<a href="{row["rss_link"]}">RSS</a>' if row["rss_link"] else "N/A"
+            )
+            json_cell = (
+                f'<a href="{row["json_link"]}">JSON</a>' if row["json_link"] else "N/A"
+            )
+            html_lines.extend(
+                [
+                    "      <tr>",
+                    f"        <td>{name_cell}</td>",
+                    f"        <td>{row['torrent_count']}</td>",
+                    f"        <td>{rss_cell}</td>",
+                    f"        <td>{json_cell}</td>",
+                    "      </tr>",
+                ]
+            )
+
+        html_lines.extend(
+            [
+                "    </tbody>",
+                "  </table>",
+                "</body>",
+                "</html>",
+            ]
+        )
+        html_content = "\n".join(html_lines) + "\n"
+        index_path = os.path.join(self.torrents_root_dir, "index.html")
+        with open(index_path, "w", encoding="utf-8") as index_file:
+            index_file.write(html_content)
+        logging.info(
+            f"Wrote {index_path} listing {len(table_rows)} torrent feed directories"
+        )
+
     def make_rss_feed(self):
         fg = FeedGenerator()
         fg.load_extension("torrent")
@@ -479,6 +596,7 @@ class TileLog:
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
         manifest = self.write_torrent_manifest(paths)
         self.write_torrent_index_html(manifest)
+        self.write_root_index()
 
     def delete_tiles(self, start_index, stop_index):
         data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))

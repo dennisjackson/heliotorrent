@@ -106,6 +106,14 @@ def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
     assert '<a href="http://localhost:8000/torrents.json"' in html
     assert "L01-0-256.torrent" in html
 
+    root_index_path = os.path.join(tile_log.torrents_root_dir, "index.html")
+    assert os.path.exists(root_index_path)
+    with open(root_index_path, "r", encoding="utf-8") as root_index_file:
+        root_index = root_index_file.read()
+    assert 'tuscolo_pytest/index.html' in root_index
+    assert 'tuscolo_pytest/feed.xml' in root_index
+    assert 'tuscolo_pytest/torrents.json' in root_index
+
 
 def test_delete_tiles(tile_log):
     start_index = 0
