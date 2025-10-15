@@ -11,7 +11,6 @@ use clap::Parser;
 use lru::LruCache;
 use reqwest::Client;
 use serde::Deserialize;
-use tokio_rustls::rustls::crypto::CryptoProvider;
 use std::{collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
 use std::{
     net::{IpAddr, Ipv6Addr},
@@ -25,7 +24,7 @@ use tracing::{debug, error, info, instrument, warn};
 use axum_server::tls_rustls::RustlsConfig;
 use rustls_pemfile::{certs, private_key};
 use std::io::BufReader;
-use tokio_rustls::rustls::{self, pki_types::PrivateKeyDer};
+use tokio_rustls::rustls::{self};
 
 #[derive(Default, Clone)]
 pub struct LogStats {
@@ -190,7 +189,7 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
 
             let tls_config = rustls::ServerConfig::builder()
                 .with_no_client_auth()
-                .with_single_cert(certs, PrivateKeyDer::from(key))?;
+                .with_single_cert(certs, key)?;
 
             let tls_config = RustlsConfig::from_config(Arc::new(tls_config));
 
@@ -221,15 +220,6 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
 pub fn create_multi_router(log_caches: Vec<ProxyState>, static_dir: String) -> Router {
     let mut app = Router::new();
     let stats = Arc::new(Mutex::new(HashMap::new()));
-
-    // Extract log names for index page
-    let log_names: Vec<String> = log_caches
-        .iter()
-        .map(|(_, _, _, _, name, _)| name.clone())
-        .collect();
-
-    // Add root index handler with log names
-    app = app.route("/", get(index_handler).with_state(log_names));
 
     let mut webseed_router = Router::new();
     for (cache_tracker, target_host, client, cache_dir, name, _) in &log_caches {
@@ -267,7 +257,7 @@ fn format_number(num: u64) -> String {
     let len = num_str.len();
 
     for (i, c) in num_str.chars().enumerate() {
-        if i > 0 && (len - i) % 3 == 0 {
+        if i > 0 && (len - i).is_multiple_of(3) {
             result.push(',');
         }
         result.push(c);
@@ -282,15 +272,15 @@ fn format_bytes(bytes: u64) -> String {
     const TB: u64 = GB * 1024;
 
     if bytes < KB {
-        return format!("{} bytes", bytes);
+        format!("{} bytes", bytes)
     } else if bytes < MB {
-        return format!("{:.2} KB", bytes as f64 / KB as f64);
+        format!("{:.2} KB", bytes as f64 / KB as f64)
     } else if bytes < GB {
-        return format!("{:.2} MB", bytes as f64 / MB as f64);
+        format!("{:.2} MB", bytes as f64 / MB as f64)
     } else if bytes < TB {
-        return format!("{:.2} GB", bytes as f64 / GB as f64);
+        format!("{:.2} GB", bytes as f64 / GB as f64)
     } else {
-        return format!("{:.2} TB", bytes as f64 / TB as f64);
+        format!("{:.2} TB", bytes as f64 / TB as f64)
     }
 }
 
@@ -395,15 +385,13 @@ async fn proxy_handler(
     };
 
     // Check for range request
-    if let Some(range_header) = headers.get(header::RANGE) {
-        if let Ok(range_str) = range_header.to_str() {
-            if let Some(resp) =
+    if let Some(range_header) = headers.get(header::RANGE)
+        && let Ok(range_str) = range_header.to_str()
+            && let Some(resp) =
                 handle_range_response(&body, range_str, is_cache_hit, name, stats).await
             {
                 return resp;
             }
-        }
-    }
 
     // Update bytes served
     {
@@ -439,15 +427,13 @@ async fn handle_readme(
 
     match fs::read(&readme_path).await {
         Ok(body) => {
-            if let Some(range_header) = headers.get(header::RANGE) {
-                if let Ok(range_str) = range_header.to_str() {
-                    if let Some(resp) =
+            if let Some(range_header) = headers.get(header::RANGE)
+                && let Ok(range_str) = range_header.to_str()
+                    && let Some(resp) =
                         handle_range_response(&body, range_str, true, log_name, stats).await
                     {
                         return resp;
                     }
-                }
-            }
 
             // Update bytes served
             {
@@ -638,48 +624,4 @@ mod tests {
         let yaml = fs::read_to_string("test/test_config.yaml").expect("test_config.yaml missing");
         let _: Config = serde_yaml::from_str(&yaml).unwrap();
     }
-}
-
-async fn index_handler(State(log_names): State<Vec<String>>) -> impl IntoResponse {
-    let mut log_links = String::new();
-    for name in &log_names {
-        log_links.push_str(&format!(
-            "<li>{0}: <a href=\"/torrents/{0}/feed.xml\">Feed XML</a></li>\n",
-            name
-        ));
-    }
-
-    let html = format!(
-        r#"<!DOCTYPE html>
-<html>
-<head>
-    <title>Heliostat</title>
-    <style>
-        body {{ font-family: system-ui, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }}
-        h1, h2 {{ color: #333; }}
-        a {{ color: #0366d6; text-decoration: none; }}
-        a:hover {{ text-decoration: underline; }}
-    </style>
-</head>
-<body>
-    <h1>Heliostat</h1>
-    <p> Heliostat serves Static CT logs over BitTorrent. </p>
-        <p>Read more at <a href="https://github.com/dennisjackson/heliostat">https://github.com/dennisjackson/heliostat</a>.</p>
-
-
-    <h2>Available Logs:</h2>
-    <ul>
-        {log_links}
-    </ul>
-
-    <p><a href="/statistics">View Statistics</a></p>
-</body>
-</html>"#
-    );
-
-    Response::builder()
-        .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, "text/html; charset=UTF-8")
-        .body(Body::from(html))
-        .unwrap()
 }
