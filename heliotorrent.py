@@ -9,6 +9,7 @@ and generates RSS feeds for the log data.
 import argparse
 import logging
 import random
+import shutil
 import time
 import sys
 import urllib.request
@@ -275,7 +276,9 @@ logs:
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    # TODO Check Wget2 is installed.
+    if shutil.which("wget2") is None:
+        logging.error("wget2 is required but not installed or not in PATH.")
+        sys.exit(1)
 
     # Extract global settings
     data_dir = config.get("data_dir", "data")

@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import pytest
 import logging
 from TileLog import TileLog
@@ -15,6 +16,10 @@ def tile_log(monkeypatch):
     feed_url = "http://localhost:8000/feed.xml"
     max_size = 1024  # Limit for testing
     log_name = "tuscolo_pytest"
+
+    if shutil.which("wget2") is None:
+        logging.error("wget2 is required but not installed or not in PATH.")
+        sys.exit(1)
 
     # Ensure clean test environment
     if os.path.exists(storage_dir):

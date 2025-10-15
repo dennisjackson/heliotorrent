@@ -1,7 +1,0 @@
-bencodepy
-feedgen
-humanize
-torf
-coloredlogs
-pytest
-pyyaml

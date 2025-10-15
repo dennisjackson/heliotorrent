@@ -1,0 +1,15 @@
+[project]
+name = "heliotorrent"
+version = "0.1.0"
+description = "Serve a Sunlight Transparency log via torrents."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "bencodepy>=0.9.5",
+    "coloredlogs>=15.0.1",
+    "feedgen>=1.0.0",
+    "humanize>=4.13.0",
+    "pytest>=8.4.2",
+    "pyyaml>=6.0.3",
+    "torf>=4.3.0",
+]
