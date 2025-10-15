@@ -7,16 +7,14 @@ creating torrents, and running external commands.
 
 import math
 import logging
-import hashlib
 import os
 from datetime import datetime
 import sys
 import subprocess
-from typing import Dict, Generator, List, Optional, Tuple, Union, Any
+from typing import Generator, List, Optional, Tuple
 
 from torf import Torrent
 import humanize
-import bencodepy
 
 
 TILE_SIZE = 256
@@ -35,7 +33,7 @@ def int_to_parts(tile_number: int) -> List[str]:
     # Pad the number to a multiple of 3 digits
     tile_str = str(tile_number).zfill(((len(str(tile_number)) + 2) // 3) * 3)
     # Split into groups of 3 digits
-    parts = [f"{tile_str[j:j+3]}" for j in range(0, len(tile_str), 3)]
+    parts = [f"{tile_str[j : j + 3]}" for j in range(0, len(tile_str), 3)]
     # Prefix all but the last part with 'x'
     parts = [f"x{x}" for x in parts[:-1]] + [parts[-1]]
     return parts
@@ -229,7 +227,9 @@ def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
         paired_input: Tuple of (command, input_list)
     """
     command, input_list = paired_input
-    logging.debug(f"Running command: {' '.join(command)}. First line of input: {input_list[0] if input_list else 'None'}")
+    logging.debug(
+        f"Running command: {' '.join(command)}. First line of input: {input_list[0] if input_list else 'None'}"
+    )
 
     try:
         result = subprocess.run(
@@ -243,13 +243,13 @@ def run_scraper(paired_input: Tuple[List[str], List[str]]) -> None:
         # Log any stderr output from successful command
         if result.stderr:
             logging.warning(f"Error running  {' '.join(command)}")
-            stderr_text = result.stderr.decode('utf-8', errors='replace')
+            stderr_text = result.stderr.decode("utf-8", errors="replace")
             for line in stderr_text.splitlines():
                 logging.warning(f"Command stderr: {line}")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error running {' '.join(command)}: {e.returncode}")
         # Log any stderr output from the failed command
         if e.stderr:
-            stderr_text = e.stderr.decode('utf-8', errors='replace')
+            stderr_text = e.stderr.decode("utf-8", errors="replace")
             for line in stderr_text.splitlines():
                 logging.error(f"Command stderr: {line}")

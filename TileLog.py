@@ -16,7 +16,6 @@ from util import (
     get_data_tile_paths,
     get_hash_tile_paths,
     create_torrent_file,
-    get_torrent_file_info,
     run_scraper,
 )
 
@@ -262,7 +261,7 @@ class TileLog:
             > 0
         ):
             logging.debug(
-                f"entries since last checkpoint: {current_checkpoint -last_checkpoint_size }"
+                f"entries since last checkpoint: {current_checkpoint - last_checkpoint_size}"
             )
             return True
         logging.debug(
@@ -272,9 +271,9 @@ class TileLog:
 
     def make_torrents(self, ranges):
         for startIndex, endIndex in ranges:
-            assert (
-                endIndex - startIndex
-            ) == ENTRIES_PER_LEAF_TORRENT, f"Elements in torrent must match {ENTRIES_PER_LEAF_TORRENT} (ENTRIES_PER_LEAF_TORRENT)"
+            assert (endIndex - startIndex) == ENTRIES_PER_LEAF_TORRENT, (
+                f"Elements in torrent must match {ENTRIES_PER_LEAF_TORRENT} (ENTRIES_PER_LEAF_TORRENT)"
+            )
             name = f"{self.log_name}-L01-{startIndex}-{endIndex}"
             tp = os.path.join(self.torrents_dir, f"L01-{startIndex}-{endIndex}.torrent")
             paths = self.__get_leaf_tile_paths(
@@ -373,7 +372,9 @@ class TileLog:
         fg.load_extension("torrent")
         fg.title(self.log_name)
         fg.link(href=self.feed_url)
-        fg.description("Heliotorrent version " + VERSION + " - Feed for " + self.log_name)
+        fg.description(
+            "Heliotorrent version " + VERSION + " - Feed for " + self.log_name
+        )
         paths = glob(os.path.join(self.torrents_dir, "*.torrent"))
         for p in paths:
             self.add_torrent_to_feed(fg, p)

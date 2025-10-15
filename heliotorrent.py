@@ -8,16 +8,13 @@ and generates RSS feeds for the log data.
 
 import argparse
 import logging
-import os
 import random
-import shutil
 import time
 import sys
 import urllib.request
 import json
-from datetime import datetime
 from multiprocessing import Process
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Dict, Any
 
 import coloredlogs
 import yaml
@@ -147,14 +144,13 @@ def generate_config_from_log_list(
         "logs": [],
     }
 
-    current_time = datetime.now().isoformat()
+    # current_time = datetime.now().isoformat()
 
     for operator in log_list.get("operators", []):
-        operator_name = operator.get("name", "Unknown")
+        # operator_name = operator.get("name", "Unknown")
 
         # Process tiled logs
         for tiled_log in operator.get("tiled_logs", []):
-
             monitoring_url = tiled_log.get("monitoring_url")
             if not monitoring_url:
                 logging.error("No url for tiled log, skipping")

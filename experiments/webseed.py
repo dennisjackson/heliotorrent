@@ -5,10 +5,12 @@ import subprocess
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 def find_torrent_files(directory):
     """Recursively finds all .torrent files in a directory."""
     pattern = os.path.join(directory, "**", "*.torrent")
     return glob.glob(pattern, recursive=True)
+
 
 def update_torrent_file(torrent_file, urls):
     """Updates a single torrent file with web seeds."""
@@ -22,35 +24,49 @@ def update_torrent_file(torrent_file, urls):
         error_message += f"     Error: {e.stderr.strip()}"
         return (torrent_file, False, error_message)
     except FileNotFoundError:
-        return (torrent_file, False, "Error: 'torrentfile' command not found. Make sure it's installed and in your PATH.\nYou can typically install it with: pip install torrentfile-cli")
+        return (
+            torrent_file,
+            False,
+            "Error: 'torrentfile' command not found. Make sure it's installed and in your PATH.\nYou can typically install it with: pip install torrentfile-cli",
+        )
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Recursively update web seed URLs in .torrent files.",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog="Example:\npython experiments/webseed.py torrents/ http://seed.example.com/torrents,http://another.seed.com/"
+        epilog="Example:\npython experiments/webseed.py torrents/ http://seed.example.com/torrents,http://another.seed.com/",
     )
     parser.add_argument("directory", help="The directory to search for .torrent files.")
     parser.add_argument("urls", help="A comma-separated list of web seed URLs.")
-    parser.add_argument("-w", "--workers", type=int, default=10, help="Number of parallel workers.")
+    parser.add_argument(
+        "-w", "--workers", type=int, default=10, help="Number of parallel workers."
+    )
     args = parser.parse_args()
 
-    urls = [url.strip() for url in args.urls.split(',')]
+    urls = [url.strip() for url in args.urls.split(",")]
 
     if not os.path.isdir(args.directory):
         print(f"Error: Directory not found at '{args.directory}'")
         return
 
-    torrent_files = glob.glob(os.path.join(args.directory, "**", "*.torrent"),recursive=True)
+    torrent_files = glob.glob(
+        os.path.join(args.directory, "**", "*.torrent"), recursive=True
+    )
 
     if not torrent_files:
         print(f"No .torrent files found in '{args.directory}'")
         return
 
-    print(f"Found {len(torrent_files)} .torrent files. Updating web seeds with {args.workers} workers...")
+    print(
+        f"Found {len(torrent_files)} .torrent files. Updating web seeds with {args.workers} workers..."
+    )
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = [executor.submit(update_torrent_file, torrent_file, urls) for torrent_file in torrent_files]
+        futures = [
+            executor.submit(update_torrent_file, torrent_file, urls)
+            for torrent_file in torrent_files
+        ]
 
         for future in tqdm(as_completed(futures), total=len(torrent_files)):
             torrent_file, success, error_message = future.result()
