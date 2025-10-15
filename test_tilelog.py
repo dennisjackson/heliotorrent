@@ -98,6 +98,14 @@ def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
     assert first_entry["torrent_url"].startswith("http://localhost:8000/")
     assert "creation_time" in first_entry
 
+    html_path = os.path.join(tile_log.torrents_dir, "index.html")
+    assert os.path.exists(html_path)
+    with open(html_path, "r", encoding="utf-8") as html_file:
+        html = html_file.read()
+    assert '<a href="http://localhost:8000/feed.xml"' in html
+    assert '<a href="http://localhost:8000/torrents.json"' in html
+    assert "L01-0-256.torrent" in html
+
 
 def test_delete_tiles(tile_log):
     start_index = 0

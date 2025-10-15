@@ -405,6 +405,63 @@ class TileLog:
         logging.info(
             f"Wrote {manifest_path} with {len(manifest_entries)} torrent entries"
         )
+        return manifest
+
+    def write_torrent_index_html(self, manifest):
+        base_url = self.feed_url.rsplit("/", 1)[0]
+        feed_url = self.feed_url
+        json_url = f"{base_url}/torrents.json"
+        html_lines = [
+            "<!DOCTYPE html>",
+            '<html lang="en">',
+            "<head>",
+            f"  <meta charset=\"utf-8\">",
+            f"  <title>{self.log_name} Torrents</title>",
+            "</head>",
+            "<body>",
+            f"  <h1>{self.log_name} Torrents</h1>",
+            f"  <p>Last updated {manifest['last_updated']}</p>",
+            "  <ul>",
+            f"    <li><a href=\"{feed_url}\">RSS feed</a></li>",
+            f"    <li><a href=\"{json_url}\">Torrent manifest (JSON)</a></li>",
+            "  </ul>",
+            "  <table>",
+            "    <thead>",
+            "      <tr>",
+            "        <th>Start Index</th>",
+            "        <th>End Index</th>",
+            "        <th>Created</th>",
+            "        <th>Torrent</th>",
+            "      </tr>",
+            "    </thead>",
+            "    <tbody>",
+        ]
+
+        for entry in manifest["torrents"]:
+            html_lines.extend(
+                [
+                    "      <tr>",
+                    f"        <td>{entry['start_index']}</td>",
+                    f"        <td>{entry['end_index']}</td>",
+                    f"        <td>{entry['creation_time']}</td>",
+                    f"        <td><a href=\"{entry['torrent_url']}\">{os.path.basename(entry['torrent_url'])}</a></td>",
+                    "      </tr>",
+                ]
+            )
+
+        html_lines.extend(
+            [
+                "    </tbody>",
+                "  </table>",
+                "</body>",
+                "</html>",
+            ]
+        )
+        html_content = "\n".join(html_lines) + "\n"
+        html_path = os.path.join(self.torrents_dir, "index.html")
+        with open(html_path, "w", encoding="utf-8") as html_file:
+            html_file.write(html_content)
+        logging.info(f"Wrote {html_path} for torrent index")
 
     def make_rss_feed(self):
         fg = FeedGenerator()
@@ -420,7 +477,8 @@ class TileLog:
         fp = os.path.join(self.torrents_dir, "feed.xml")
         fg.rss_file(fp, pretty=True)
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
-        self.write_torrent_manifest(paths)
+        manifest = self.write_torrent_manifest(paths)
+        self.write_torrent_index_html(manifest)
 
     def delete_tiles(self, start_index, stop_index):
         data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))
