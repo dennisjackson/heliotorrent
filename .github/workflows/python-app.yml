@@ -64,5 +64,8 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: Run config smoke test
+      - name: Generate config
+        run: uv run python heliotorrent.py --generate-config > test_config.yaml
+
+      - name: Run with config
         run: uv run python heliotorrent.py --config test_config.yaml

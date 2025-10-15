@@ -473,11 +473,11 @@ class TileLog:
             "      <header>",
             '        <h1 class="page-title">',
             '          <span class="icon icon-log" aria-hidden="true"></span>',
-            f"          {self.log_name} Torrents",
+            f"          {self.log_name}",
             "        </h1>",
             f"        <p class=\"page-subtitle\">Last updated {last_updated_display}</p>",
             '        <div class="actions">',
-            f'          <a href="{feed_url}" class="icon-link is-primary">',
+            f'          <a href="{feed_url}" class="icon-link">',
             '            <span class="icon icon-rss" aria-hidden="true"></span>',
             "            <span>RSS feed</span>",
             "          </a>",
@@ -488,8 +488,6 @@ class TileLog:
             "        </div>",
             "      </header>",
             '      <ul class="meta-list">',
-            f"        <li class=\"badge\">Total torrents: {torrent_count}</li>",
-            f"        <li class=\"badge\">Feed host: {feed_host}</li>",
             "      </ul>",
         ]
 

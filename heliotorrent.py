@@ -213,12 +213,12 @@ data_dir: "data"
 torrent_dir: "torrents"
 # Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
 feed_url_base: "http://127.0.0.1/torrents"
-# How often to run in seconds (0 for one-time run)
-frequency: 300
-# Maximum number of entries to fetch (null for no limit)
-entry_limit: null
+# How often to run in seconds (0 for one-time run, 3600 is a good default)
+frequency: 0
+# Maximum number of entries to fetch (null for no limit, 1048576 for 1 torrent)
+entry_limit: 1048576
 # Delete used tiles after processing
-delete_tiles: false
+delete_tiles: true
 # Global webseeds to add to all torrents. This can be overridden on a per-log basis.
 webseeds:
   - "http://global.webseed.example.com/webseed/"
@@ -230,26 +230,16 @@ logs:
     # URL of the log to scrape
     log_url: "https://tuscolo2026h1.skylight.geomys.org/"
     # The following values can be uncommented to override the global settings.
+    # feed_url: "http://127.0.0.1/tuscolo2026h1/feed.xml"
     # frequency: 300
     # entry_limit: null
     # delete_tiles: false
-    # Webseeds to add to the torrents. This will override the global webseeds setting.
-    webseeds:
-      - "http://webseed.example.com/"
+    # webseeds:
+    #  - "http://webseed.example.com/"
 
 # You can add more logs here. Optional keys will use default values.
 #  - name: "another-log"
 #    log_url: "https://another.log.server/log/"
-#    # This log will use the global webseeds setting.
-#
-#  - name: "log-with-no-webseeds"
-#    log_url: "https://no.seeds.please/log/"
-#    # This will override the global setting and result in no webseeds.
-#    webseeds: []
-#
-#  - name: "log-with-custom-feed"
-#    log_url: "https://another.log.server/log/"
-#    feed_url: "http://127.0.0.1/custom.xml"
 """
 
     if args.generate_config:
