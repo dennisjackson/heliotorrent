@@ -1,0 +1,27 @@
+[package]
+name = "heliostat"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "1", features = ["http2"] }
+bytes = "1"
+futures = "0.3"
+tokio-util = "0.7"
+reqwest = { version = "0.12.22", features = ["http2", "gzip","rustls-tls"]}
+tracing = "0.1.41"
+tracing-subscriber = {version = "0.3.19", features = ["env-filter"]}
+clap = { version = "4.4", features = ["derive"] }
+tempfile = "3.8"
+zstd = "0.13"
+rand = "0.8"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["fs"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+lru = "0.14.0"
+tokio-rustls = "0.26.2"
+rustls-pemfile = "2.1"
+axum-server = {version = "0.7", features = ["tls-rustls"]}
