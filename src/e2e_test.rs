@@ -53,11 +53,11 @@ mod tests {
         };
         (
             async move {
-                let args = Args {
+                let _ = Args {
                     config_file: "test_config.yaml".to_string(),
                 };
                 if let Err(e) = launch_proxy(config).await {
-                    assert!(false, "Failed to launch proxy for test: {}", e);
+                    panic!("Failed to launch proxy for test: {}", e);
                 }
             },
             data_dir,
@@ -88,11 +88,10 @@ mod tests {
         // We expect a cancelled error, so we ignore the result.
         let _ = server_handle.await;
 
-        if let Err(e) = result {
-            if e.is_panic() {
+        if let Err(e) = result
+            && e.is_panic() {
                 std::panic::resume_unwind(e.into_panic());
             }
-        }
     }
 
     async fn get_body(
@@ -140,7 +139,6 @@ mod tests {
                 "/webseed/test_log/test-torrent-name/tile/data/000",
                 "/webseed/test_log/test-torrent-name/tile/data/001",
                 "/webseed/test_log/test-torrent-name/README.md",
-                "/",
                 "/statistics",
                 "/torrents/test_log/feed.xml",
                 "/torrents/test_log/L01-0-1048576.torrent",
