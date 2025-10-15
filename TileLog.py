@@ -1,4 +1,5 @@
 from glob import glob
+import json
 import logging
 import urllib.request
 from urllib.parse import urlsplit
@@ -367,6 +368,44 @@ class TileLog:
             type="application/x-bittorrent",
         )
 
+    def write_torrent_manifest(self, torrent_paths):
+        base_url = self.feed_url.rsplit("/", 1)[0]
+        manifest_entries = []
+        for path in sorted(torrent_paths):
+            torrent_name, _ = os.path.splitext(os.path.basename(path))
+            match = re.search(r"^L\d+-(\d+)-(\d+)$", torrent_name)
+            if not match:
+                logging.warning(
+                    f"Skipping torrent with unexpected name format: {path}"
+                )
+                continue
+            start_index, end_index = map(int, match.groups())
+            created = datetime.fromtimestamp(
+                os.path.getmtime(path), tz=timezone.utc
+            ).isoformat()
+            manifest_entries.append(
+                {
+                    "start_index": start_index,
+                    "end_index": end_index,
+                    "creation_time": created,
+                    "torrent_url": f"{base_url}/{torrent_name}.torrent",
+                }
+            )
+
+        manifest_entries.sort(key=lambda item: (item["start_index"], item["end_index"]))
+        manifest = {
+            "log_name": self.log_name,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "torrents": manifest_entries,
+        }
+        manifest_path = os.path.join(self.torrents_dir, "torrents.json")
+        with open(manifest_path, "w", encoding="utf-8") as manifest_file:
+            json.dump(manifest, manifest_file, indent=2)
+            manifest_file.write("\n")
+        logging.info(
+            f"Wrote {manifest_path} with {len(manifest_entries)} torrent entries"
+        )
+
     def make_rss_feed(self):
         fg = FeedGenerator()
         fg.load_extension("torrent")
@@ -381,6 +420,7 @@ class TileLog:
         fp = os.path.join(self.torrents_dir, "feed.xml")
         fg.rss_file(fp, pretty=True)
         logging.info(f"Wrote {fp} with {len(paths)} torrent files")
+        self.write_torrent_manifest(paths)
 
     def delete_tiles(self, start_index, stop_index):
         data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))

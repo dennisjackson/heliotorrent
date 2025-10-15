@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -83,6 +84,19 @@ def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
         content = f.read()
         assert "L01-0-256.torrent" in content
         assert "http://localhost:8000/L01-0-256.torrent" in content
+
+    manifest_path = os.path.join(tile_log.torrents_dir, "torrents.json")
+    assert os.path.exists(manifest_path)
+    with open(manifest_path, "r", encoding="utf-8") as manifest_file:
+        manifest = json.load(manifest_file)
+    assert manifest["log_name"] == tile_log.log_name
+    assert "last_updated" in manifest
+    assert len(manifest["torrents"]) >= 4
+    first_entry = manifest["torrents"][0]
+    assert first_entry["start_index"] == 0
+    assert first_entry["end_index"] == 256
+    assert first_entry["torrent_url"].startswith("http://localhost:8000/")
+    assert "creation_time" in first_entry
 
 
 def test_delete_tiles(tile_log):
