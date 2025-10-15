@@ -452,10 +452,7 @@ class TileLog:
             os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME),
             start=self.torrents_dir,
         ).replace(os.path.sep, "/")
-        feed_parts = urlsplit(feed_url)
-        feed_host = feed_parts.netloc or feed_parts.path or feed_url
         torrents = manifest["torrents"]
-        torrent_count = len(torrents)
         last_updated_display = self._format_timestamp(manifest.get("last_updated"))
 
         html_lines = [
