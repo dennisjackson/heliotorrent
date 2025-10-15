@@ -78,3 +78,7 @@ Stop the service gracefully to allow workers to finish writing torrents. If you 
 
 - `uv run pytest` runs the unit tests.
 - `uv run python heliotorrent.py --config test_config.yaml --verbose` performs a local smoke test against public logs (ensure you are comfortable with the bandwidth requirements first).
+
+## Heliostat
+
+`git subtree pull --prefix=heliostat git@github.com:dennisjackson/heliostat.git master --squash`
