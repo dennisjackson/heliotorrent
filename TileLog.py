@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import random
 import time
 import re
+import shutil
 
 from feedgen.feed import FeedGenerator
 
@@ -28,6 +29,9 @@ TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
 FETCH_CHECKPOINT_BACKOFF = 60
+STATIC_ASSETS_DIR = os.path.join(os.path.dirname(__file__), "static")
+DEFAULT_TORRENT_STYLESHEET = os.path.join(STATIC_ASSETS_DIR, "torrents.css")
+PUBLIC_STYLESHEET_NAME = "style.css"
 
 
 class TileLog:
@@ -89,7 +93,26 @@ class TileLog:
             self.torrents_dir,
         ]:
             os.makedirs(x, exist_ok=True)
+        self._install_static_assets()
         self.generate_readme()
+
+    def _install_static_assets(self):
+        if not os.path.exists(DEFAULT_TORRENT_STYLESHEET):
+            logging.warning(
+                "Default torrent stylesheet not found at %s; HTML output will be unstyled.",
+                DEFAULT_TORRENT_STYLESHEET,
+            )
+            return
+
+        os.makedirs(self.torrents_root_dir, exist_ok=True)
+        target_path = os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME)
+        try:
+            shutil.copyfile(DEFAULT_TORRENT_STYLESHEET, target_path)
+            logging.debug("Installed torrent stylesheet at %s", target_path)
+        except OSError as exc:
+            logging.warning(
+                "Unable to copy torrent stylesheet to %s: %s", target_path, exc
+            )
 
     def generate_readme(self):
         readme_path = os.path.join(self.storage_dir, "README.md")
@@ -412,48 +435,112 @@ class TileLog:
         base_url = self.feed_url.rsplit("/", 1)[0]
         feed_url = self.feed_url
         json_url = f"{base_url}/torrents.json"
+        stylesheet_path = os.path.relpath(
+            os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME),
+            start=self.torrents_dir,
+        ).replace(os.path.sep, "/")
+        feed_parts = urlsplit(feed_url)
+        feed_host = feed_parts.netloc or feed_parts.path or feed_url
+        torrents = manifest["torrents"]
+        torrent_count = len(torrents)
+
         html_lines = [
             "<!DOCTYPE html>",
             '<html lang="en">',
             "<head>",
-            f"  <meta charset=\"utf-8\">",
+            '  <meta charset="utf-8">',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
             f"  <title>{self.log_name} Torrents</title>",
+            f'  <link rel="stylesheet" href="{stylesheet_path}">',
             "</head>",
             "<body>",
-            f"  <h1>{self.log_name} Torrents</h1>",
-            f"  <p>Last updated {manifest['last_updated']}</p>",
-            "  <ul>",
-            f"    <li><a href=\"{feed_url}\">RSS feed</a></li>",
-            f"    <li><a href=\"{json_url}\">Torrent manifest (JSON)</a></li>",
-            "  </ul>",
-            "  <table>",
-            "    <thead>",
-            "      <tr>",
-            "        <th>Start Index</th>",
-            "        <th>End Index</th>",
-            "        <th>Created</th>",
-            "        <th>Torrent</th>",
-            "      </tr>",
-            "    </thead>",
-            "    <tbody>",
+            "  <main>",
+            '    <section class="card">',
+            "      <header>",
+            '        <h1 class="page-title">',
+            '          <span class="icon icon-log" aria-hidden="true"></span>',
+            f"          {self.log_name} Torrents",
+            "        </h1>",
+            f'        <p class="page-subtitle">Last updated {manifest["last_updated"]}</p>',
+            '        <div class="actions">',
+            f'          <a href="{feed_url}" class="icon-link is-primary">',
+            '            <span class="icon icon-rss" aria-hidden="true"></span>',
+            "            <span>RSS feed</span>",
+            "          </a>",
+            f'          <a href="{json_url}" class="icon-link">',
+            '            <span class="icon icon-json" aria-hidden="true"></span>',
+            "            <span>JSON manifest</span>",
+            "          </a>",
+            "        </div>",
+            "      </header>",
+            '      <ul class="meta-list">',
+            f"        <li class=\"badge\">Total torrents: {torrent_count}</li>",
+            f"        <li class=\"badge\">Feed host: {feed_host}</li>",
+            "      </ul>",
         ]
 
-        for entry in manifest["torrents"]:
+        if torrents:
             html_lines.extend(
                 [
-                    "      <tr>",
-                    f"        <td>{entry['start_index']}</td>",
-                    f"        <td>{entry['end_index']}</td>",
-                    f"        <td>{entry['creation_time']}</td>",
-                    f"        <td><a href=\"{entry['torrent_url']}\">{os.path.basename(entry['torrent_url'])}</a></td>",
-                    "      </tr>",
+                    '      <div class="table-wrapper">',
+                    "        <table>",
+                    "          <thead>",
+                    "            <tr>",
+                    "              <th>Range</th>",
+                    "              <th>Created</th>",
+                    "              <th>Download</th>",
+                    "            </tr>",
+                    "          </thead>",
+                    "          <tbody>",
+                ]
+            )
+
+            for entry in torrents:
+                torrent_name = os.path.basename(entry["torrent_url"])
+                html_lines.extend(
+                    [
+                        "            <tr>",
+                        "              <td>",
+                        '                <div class="cell-stack">',
+                        f"                  <span>Start: {entry['start_index']}</span>",
+                        f"                  <span>End: {entry['end_index']}</span>",
+                        "                </div>",
+                        "              </td>",
+                        "              <td>",
+                        '                <div class="cell-stack">',
+                        f"                  <span>{entry['creation_time']}</span>",
+                        "                  <small>UTC</small>",
+                        "                </div>",
+                        "              </td>",
+                        "              <td>",
+                        f'                <a href="{entry["torrent_url"]}" class="icon-link">',
+                        '                  <span class="icon icon-torrent" aria-hidden="true"></span>',
+                        f'                  <span class="torrent-name">{torrent_name}</span>',
+                        "                </a>",
+                        "              </td>",
+                        "            </tr>",
+                    ]
+                )
+
+            html_lines.extend(
+                [
+                    "          </tbody>",
+                    "        </table>",
+                    "      </div>",
+                ]
+            )
+        else:
+            html_lines.extend(
+                [
+                    '      <div class="empty-state">No torrents available yet.</div>',
                 ]
             )
 
         html_lines.extend(
             [
-                "    </tbody>",
-                "  </table>",
+                "    </section>",
+                "  </main>",
+                f"  <footer>Generated by Heliotorrent {VERSION}</footer>",
                 "</body>",
                 "</html>",
             ]
@@ -520,54 +607,133 @@ class TileLog:
                 }
             )
 
+        stylesheet_path = PUBLIC_STYLESHEET_NAME
+        total_logs = len(table_rows)
+        total_torrents = sum(row["torrent_count"] for row in table_rows)
+        logs_label = "log" if total_logs == 1 else "logs"
+        torrents_label = "torrent" if total_torrents == 1 else "torrents"
+        if total_logs:
+            subtitle = (
+                f"Browse {total_logs} {logs_label}. "
+                f"Currently tracking {total_torrents} {torrents_label}."
+            )
+        else:
+            subtitle = "No torrent feeds have been generated yet."
+
         html_lines = [
             "<!DOCTYPE html>",
             '<html lang="en">',
             "<head>",
             '  <meta charset="utf-8">',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
             "  <title>Heliotorrent Feeds</title>",
+            f'  <link rel="stylesheet" href="{stylesheet_path}">',
             "</head>",
             "<body>",
-            "  <h1>Heliotorrent Feeds</h1>",
-            "  <table>",
-            "    <thead>",
-            "      <tr>",
-            "        <th>Log</th>",
-            "        <th>Torrents</th>",
-            "        <th>RSS</th>",
-            "        <th>JSON</th>",
-            "      </tr>",
-            "    </thead>",
-            "    <tbody>",
+            "  <main>",
+            '    <section class="card">',
+            '      <h1 class="page-title">Heliotorrent Feeds</h1>',
+            f'      <p class="page-subtitle">{subtitle}</p>',
         ]
 
-        for row in table_rows:
-            name_cell = (
-                f'<a href="{row["log_link"]}">{row["name"]}</a>'
-                if row["log_link"]
-                else row["name"]
-            )
-            rss_cell = (
-                f'<a href="{row["rss_link"]}">RSS</a>' if row["rss_link"] else "N/A"
-            )
-            json_cell = (
-                f'<a href="{row["json_link"]}">JSON</a>' if row["json_link"] else "N/A"
-            )
+        if total_logs:
             html_lines.extend(
                 [
-                    "      <tr>",
-                    f"        <td>{name_cell}</td>",
-                    f"        <td>{row['torrent_count']}</td>",
-                    f"        <td>{rss_cell}</td>",
-                    f"        <td>{json_cell}</td>",
-                    "      </tr>",
+                    '      <ul class="meta-list">',
+                    f"        <li class=\"badge\">Feeds: {total_logs}</li>",
+                    f"        <li class=\"badge\">Torrents: {total_torrents}</li>",
+                    "      </ul>",
+                    '      <div class="table-wrapper">',
+                    "        <table>",
+                    "          <thead>",
+                    "            <tr>",
+                    "              <th>Log</th>",
+                    "              <th>Torrents</th>",
+                    "              <th>Resources</th>",
+                    "            </tr>",
+                    "          </thead>",
+                    "          <tbody>",
                 ]
             )
 
+            for row in table_rows:
+                if row["log_link"]:
+                    name_cell = [
+                        '            <a href="'
+                        + row["log_link"]
+                        + '" class="icon-link is-primary">',
+                        '              <span class="icon icon-log" aria-hidden="true"></span>',
+                        f"              <span>{row['name']}</span>",
+                        "            </a>",
+                    ]
+                else:
+                    name_cell = [
+                        '            <div class="cell-stack">',
+                        f"              <span>{row['name']}</span>",
+                        '              <small>Index not available</small>',
+                        "            </div>",
+                    ]
+
+                rss_cell = (
+                    [
+                        '            <a href="'
+                        + row["rss_link"]
+                        + '" class="icon-link">',
+                        '              <span class="icon icon-rss" aria-hidden="true"></span>',
+                        "              <span>RSS</span>",
+                        "            </a>",
+                    ]
+                    if row["rss_link"]
+                    else ['            <span class="muted">RSS unavailable</span>']
+                )
+
+                json_cell = (
+                    [
+                        '            <a href="'
+                        + row["json_link"]
+                        + '" class="icon-link">',
+                        '              <span class="icon icon-json" aria-hidden="true"></span>',
+                        "              <span>JSON</span>",
+                        "            </a>",
+                    ]
+                    if row["json_link"]
+                    else ['            <span class="muted">JSON unavailable</span>']
+                )
+
+                html_lines.extend(
+                    [
+                        "            <tr>",
+                        "              <td>",
+                        *name_cell,
+                        "              </td>",
+                        "              <td>",
+                        f"                <span class=\"badge\">{row['torrent_count']} file{'s' if row['torrent_count'] != 1 else ''}</span>",
+                        "              </td>",
+                        "              <td>",
+                        '                <div class="actions">',
+                        *rss_cell,
+                        *json_cell,
+                        "                </div>",
+                        "              </td>",
+                        "            </tr>",
+                    ]
+                )
+
+            html_lines.extend(
+                [
+                    "          </tbody>",
+                    "        </table>",
+                    "      </div>",
+                ]
+            )
+        else:
+            html_lines.append('      <div class="empty-state">Run Heliotorrent to publish your first feed.</div>')
+
         html_lines.extend(
             [
-                "    </tbody>",
-                "  </table>",
+                "    </section>",
+                "  </main>",
+                f"  <footer>Generated by Heliotorrent {VERSION}</footer>",
                 "</body>",
                 "</html>",
             ]
