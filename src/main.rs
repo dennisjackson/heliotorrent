@@ -327,7 +327,7 @@ async fn statistics_handler(State(stats): axum::extract::State<StatsMap>) -> imp
     <h1>Log Statistics</h1>
     <p>This page shows the bytes served to BitTorrent clients since Heliostat's last restart.</p>
     {stats_html}
-    <p><a href="/">Back to Home</a></p>
+    <p><a href="/torrents">Back to Home</a></p>
 </body>
 </html>"#
     );
