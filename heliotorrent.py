@@ -215,10 +215,10 @@ if __name__ == "__main__":
 data_dir: "data"
 # Directory to store generated torrent files
 torrent_dir: "torrents"
-https_port: 8443,
-http_port: 8080,
-#tls_cert: Path,
-#tls_key: Path,
+https_port: 8443
+http_port: 8080
+#tls_cert: Path
+#tls_key: Path
 # Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
 feed_url_base: "http://127.0.0.1/torrents"
 scraper_contact_email: null
