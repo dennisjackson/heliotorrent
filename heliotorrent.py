@@ -246,6 +246,7 @@ entry_limit: 1048576
 # Delete used tiles after processing
 delete_tiles: true
 # Global webseeds to add to all torrents. This can be overridden on a per-log basis.
+# Each log's webseed will be set to <global webseed>/<log_name>/
 webseeds:
   - "http://global.webseed.example.com/webseed/"
 
@@ -355,7 +356,9 @@ logs:
             feed_url = f"{feed_url_base.rstrip('/')}/{name}/feed.xml"
 
         # Use per-log webseeds if available, otherwise use global webseeds
-        webseeds = log_config.get("webseeds", global_webseeds)
+        webseeds = log_config.get("webseeds", None)
+        if not webseeds:
+            webseeds = [f"{x.rstrip('/')}/{name}/" for x in global_webseeds]
 
         p = Process(
             target=log_loop,

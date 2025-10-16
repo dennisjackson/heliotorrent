@@ -81,6 +81,8 @@ Stop the service gracefully to allow workers to finish writing torrents. If you 
 
 ## Heliostat
 
+sudo certbot certonly -d heliostat.dennis-jackson.uk --standalone
+
 `cargo build --release`
 `git subtree pull --prefix=heliostat git@github.com:dennisjackson/heliostat.git master --squash`
 
