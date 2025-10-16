@@ -55,6 +55,7 @@ mod tests {
             async move {
                 let _ = Args {
                     config_file: "test_config.yaml".to_string(),
+                    verbose: true,
                 };
                 if let Err(e) = launch_proxy(config).await {
                     panic!("Failed to launch proxy for test: {}", e);
@@ -89,9 +90,10 @@ mod tests {
         let _ = server_handle.await;
 
         if let Err(e) = result
-            && e.is_panic() {
-                std::panic::resume_unwind(e.into_panic());
-            }
+            && e.is_panic()
+        {
+            std::panic::resume_unwind(e.into_panic());
+        }
     }
 
     async fn get_body(

@@ -71,16 +71,21 @@ struct Args {
     /// Path to config YAML file
     #[arg(long, default_value = "config.yaml")]
     config_file: String,
+    /// Enable verbose logging
+    #[arg(long)]
+    verbose: bool,
 }
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
+    let args = Args::parse();
+    let log_level = if args.verbose { "debug" } else { "info" };
+
     tracing_subscriber::fmt()
-        .with_env_filter("debug")
+        .with_env_filter(log_level)
         .try_init()
         .unwrap();
 
-    let args = Args::parse();
     let config_content = match fs::read_to_string(&args.config_file).await {
         Ok(content) => content,
         Err(e) => {
@@ -177,7 +182,9 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
         if let (Some(cert_path), Some(key_path)) = (config.tls_cert, config.tls_key) {
             let https_addr = SocketAddr::new(IpAddr::from(Ipv6Addr::UNSPECIFIED), https_port);
             info!("HTTPS enabled. Starting HTTPS server on {}.", https_addr);
-            rustls::crypto::aws_lc_rs::default_provider().install_default().unwrap();
+            rustls::crypto::aws_lc_rs::default_provider()
+                .install_default()
+                .unwrap();
             let certs = {
                 let cert_file = &mut BufReader::new(std::fs::File::open(cert_path)?);
                 certs(cert_file).collect::<Result<Vec<_>, _>>()?
@@ -197,7 +204,9 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
                 .serve(app.clone().into_make_service());
             handles.push(tokio::spawn(https_server));
         } else {
-            warn!("https_port is set, but tls_cert or tls_key is missing. HTTPS server will not be started.");
+            warn!(
+                "https_port is set, but tls_cert or tls_key is missing. HTTPS server will not be started."
+            );
         }
     }
 
@@ -213,8 +222,7 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
         handle.abort();
     }
 
-    first_result?
-        .map_err(|e| e.into())
+    first_result?.map_err(|e| e.into())
 }
 
 pub fn create_multi_router(log_caches: Vec<ProxyState>, static_dir: String) -> Router {
@@ -387,11 +395,10 @@ async fn proxy_handler(
     // Check for range request
     if let Some(range_header) = headers.get(header::RANGE)
         && let Ok(range_str) = range_header.to_str()
-            && let Some(resp) =
-                handle_range_response(&body, range_str, is_cache_hit, name, stats).await
-            {
-                return resp;
-            }
+        && let Some(resp) = handle_range_response(&body, range_str, is_cache_hit, name, stats).await
+    {
+        return resp;
+    }
 
     // Update bytes served
     {
@@ -402,7 +409,7 @@ async fn proxy_handler(
 
     //TODO: Why are the emitted Client Hello's only TLS1.2 and not using ALPN or HTTP2?
 
-    info!("Serving full response");
+    debug!("Serving full response");
     let mut response = Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_LENGTH, body.len());
@@ -423,17 +430,17 @@ async fn handle_readme(
     stats: &StatsMap,
 ) -> axum::response::Response {
     let readme_path = cache_dir.join("README.md");
-    info!("Serving special README.md from {}", readme_path.display());
+    debug!("Serving special README.md from {}", readme_path.display());
 
     match fs::read(&readme_path).await {
         Ok(body) => {
             if let Some(range_header) = headers.get(header::RANGE)
                 && let Ok(range_str) = range_header.to_str()
-                    && let Some(resp) =
-                        handle_range_response(&body, range_str, true, log_name, stats).await
-                    {
-                        return resp;
-                    }
+                && let Some(resp) =
+                    handle_range_response(&body, range_str, true, log_name, stats).await
+            {
+                return resp;
+            }
 
             // Update bytes served
             {
@@ -442,7 +449,7 @@ async fn handle_readme(
                 log_stats.bytes_served += body.len() as u64;
             }
 
-            info!("Serving full README.md");
+            debug!("Serving full README.md");
             Response::builder()
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, "text/markdown; charset=UTF-8")
@@ -509,7 +516,7 @@ async fn fetch_and_cache_body(
         let path = final_path.trim_start_matches('/');
         format!("{base}/{path}")
     };
-    info!(target_url = %target_url, "Fetching full file from upstream");
+    debug!(target_url = %target_url, "Fetching full file from upstream");
 
     //TODO Not sure if this is reusing connections properly.
     let resp = match client.get(&target_url).send().await {
@@ -535,7 +542,7 @@ async fn fetch_and_cache_body(
 
     let mut cache_guard = cache.lock().await;
     cache_guard.put(cache_key.to_string(), body.clone());
-    info!("Cached full response");
+    debug!("Cached full response");
     Some(body)
 }
 
@@ -547,7 +554,7 @@ async fn handle_range_response(
     stats: &StatsMap,
 ) -> Option<Response<Body>> {
     if let Some((start, end)) = parse_range_header(range_str, body.len()) {
-        info!(
+        debug!(
             start = start,
             end = end - 1,
             total = body.len(),
