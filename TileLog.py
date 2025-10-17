@@ -458,10 +458,7 @@ class TileLog:
         base_url = self.feed_url.rsplit("/", 1)[0]
         feed_url = self.feed_url
         json_url = f"{base_url}/torrents.json"
-        stylesheet_path = os.path.relpath(
-            os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME),
-            start=self.torrents_dir,
-        ).replace(os.path.sep, "/")
+        stylesheet_path = os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME).replace(os.path.sep, "/")
         torrents = manifest["torrents"]
         last_updated_display = self._format_timestamp(manifest.get("last_updated"))
 
