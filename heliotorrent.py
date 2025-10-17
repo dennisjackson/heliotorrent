@@ -9,6 +9,7 @@ and generates RSS feeds for the log data.
 import argparse
 import json
 import logging
+import os
 import random
 import shutil
 import subprocess
@@ -297,6 +298,29 @@ logs:
         logging.error("wget2 is required but not installed or not in PATH.")
         sys.exit(1)
 
+    # Extract global settings
+    data_dir = config.get("data_dir", "data")
+    torrent_dir = config.get("torrent_dir", "torrents")
+    global_webseeds = config.get("webseeds")
+    feed_url_base = config.get("feed_url_base")
+    frequency = config.get("frequency", 300)
+    entry_limit = config.get("entry_limit")
+    delete_tiles = config.get("delete_tiles", False)
+    contact_email = config.get("scraper_contact_email")
+    if contact_email is None or not str(contact_email).strip():
+        logging.error(
+            "scraper_contact_email must be set to a non-empty string in the config."
+        )
+        sys.exit(1)
+    try:
+        user_agent = build_user_agent(str(contact_email))
+    except ValueError as exc:
+        logging.error(str(exc))
+        sys.exit(1)
+
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(torrent_dir, exist_ok=True)
+
     heliostat_process: Optional[subprocess.Popen[str]] = None
     if args.heliostat:
         heliostat_candidate = Path(args.heliostat)
@@ -318,25 +342,6 @@ logs:
             logging.error(f"Failed to start heliostat: {exc}")
             sys.exit(1)
 
-    # Extract global settings
-    data_dir = config.get("data_dir", "data")
-    torrent_dir = config.get("torrent_dir", "torrents")
-    global_webseeds = config.get("webseeds")
-    feed_url_base = config.get("feed_url_base")
-    frequency = config.get("frequency", 300)
-    entry_limit = config.get("entry_limit")
-    delete_tiles = config.get("delete_tiles", False)
-    contact_email = config.get("scraper_contact_email")
-    if contact_email is None or not str(contact_email).strip():
-        logging.error(
-            "scraper_contact_email must be set to a non-empty string in the config."
-        )
-        sys.exit(1)
-    try:
-        user_agent = build_user_agent(str(contact_email))
-    except ValueError as exc:
-        logging.error(str(exc))
-        sys.exit(1)
 
     # Create and start a process for each log
     logging.info(
