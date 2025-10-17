@@ -96,6 +96,8 @@ def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
     first_entry = manifest["torrents"][0]
     assert first_entry["start_index"] == 0
     assert first_entry["end_index"] == 256
+    assert "data_size_bytes" in first_entry
+    assert first_entry["data_size_bytes"] > 0  # Should have actual torrent size
     assert first_entry["torrent_url"].startswith("http://localhost:8000/")
     assert "creation_time" in first_entry
 
@@ -106,6 +108,9 @@ def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
     assert '<a href="http://localhost:8000/feed.xml"' in html
     assert '<a href="http://localhost:8000/torrents.json"' in html
     assert "L01-0-256.torrent" in html
+    assert "Total data:" in html  # Check for total data display
+    assert "Starting Index" in html  # Check for new column header
+    assert "Data Size" in html  # Check for new column header
 
     root_index_path = os.path.join(tile_log.torrents_root_dir, "index.html")
     assert os.path.exists(root_index_path)

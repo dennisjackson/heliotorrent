@@ -13,12 +13,14 @@ import re
 import shutil
 
 from feedgen.feed import FeedGenerator
+import humanize
 
 from util import (
     get_data_tile_paths,
     get_hash_tile_paths,
     create_torrent_file,
     run_scraper,
+    get_torrent_file_info,
 )
 
 VERSION = "v0.0.0"
@@ -430,10 +432,20 @@ class TileLog:
             created = datetime.fromtimestamp(
                 os.path.getmtime(path), tz=timezone.utc
             ).isoformat()
+            
+            # Get the actual data size from the torrent file
+            torrent_info = get_torrent_file_info(path)
+            if torrent_info:
+                _, data_size_bytes = torrent_info
+            else:
+                data_size_bytes = 0
+                logging.warning(f"Could not read torrent file {path}, size will be 0")
+            
             manifest_entries.append(
                 {
                     "start_index": start_index,
                     "end_index": end_index,
+                    "data_size_bytes": data_size_bytes,
                     "creation_time": created,
                     "torrent_url": f"{base_url}/{torrent_name}.torrent",
                 }
@@ -461,6 +473,10 @@ class TileLog:
         stylesheet_path = "../style.css"  # Relative to individual log directory
         torrents = manifest["torrents"]
         last_updated_display = self._format_timestamp(manifest.get("last_updated"))
+        
+        # Calculate total data available in bytes
+        total_bytes = sum(t.get("data_size_bytes", 0) for t in torrents)
+        total_size_formatted = humanize.naturalsize(total_bytes, binary=True)
 
         html_lines = [
             "<!DOCTYPE html>",
@@ -492,6 +508,7 @@ class TileLog:
             "        </div>",
             "      </header>",
             '      <ul class="meta-list">',
+            f'        <li class="badge">Total data: {total_size_formatted}</li>',
             "      </ul>",
         ]
 
@@ -502,7 +519,8 @@ class TileLog:
                     "        <table>",
                     "          <thead>",
                     "            <tr>",
-                    "              <th>Range</th>",
+                    "              <th>Starting Index</th>",
+                    "              <th>Data Size</th>",
                     "              <th>Created</th>",
                     "              <th>Download</th>",
                     "            </tr>",
@@ -514,15 +532,13 @@ class TileLog:
             for entry in torrents:
                 torrent_name = os.path.basename(entry["torrent_url"])
                 created_display = self._format_timestamp(entry.get("creation_time"))
+                data_size_bytes = entry.get("data_size_bytes", 0)
+                data_size_formatted = humanize.naturalsize(data_size_bytes, binary=True)
                 html_lines.extend(
                     [
                         "            <tr>",
-                        "              <td>",
-                        '                <div class="cell-stack">',
-                        f"                  <span>Start: {entry['start_index']}</span>",
-                        f"                  <span>End: {entry['end_index']}</span>",
-                        "                </div>",
-                        "              </td>",
+                        f"              <td>{entry['start_index']:,}</td>",
+                        f"              <td>{data_size_formatted}</td>",
                         "              <td>",
                         '                <div class="cell-stack">',
                         f"                  <span>{created_display}</span>",
