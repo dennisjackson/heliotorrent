@@ -495,7 +495,7 @@ class TileLog:
             '          <span class="icon icon-log" aria-hidden="true"></span>',
             f"          {self.log_name.replace('_', ' ')}",
             "        </h1>",
-            f"        <p class=\"page-subtitle\">Last updated {last_updated_display}</p>",
+            f"        <p class=\"page-subtitle\">Last updated: {last_updated_display}</p>",
             '        <div class="actions">',
             f'          <a href="{feed_url}" class="icon-link">',
             '            <span class="icon icon-rss" aria-hidden="true"></span>',
@@ -522,7 +522,7 @@ class TileLog:
                     "              <th>Starting Index</th>",
                     "              <th>Data Size</th>",
                     "              <th>Created</th>",
-                    "              <th>Download</th>",
+                    "              <th>Torrens</th>",
                     "            </tr>",
                     "          </thead>",
                     "          <tbody>",
@@ -530,7 +530,6 @@ class TileLog:
             )
 
             for entry in torrents:
-                torrent_name = os.path.basename(entry["torrent_url"])
                 created_display = self._format_timestamp(entry.get("creation_time"))
                 data_size_bytes = entry.get("data_size_bytes", 0)
                 data_size_formatted = humanize.naturalsize(data_size_bytes, binary=True)
@@ -548,7 +547,6 @@ class TileLog:
                         "              <td>",
                         f'                <a href="{entry["torrent_url"]}" class="icon-link">',
                         '                  <span class="icon icon-torrent" aria-hidden="true"></span>',
-                        f'                  <span class="torrent-name">{torrent_name}</span>',
                         "                </a>",
                         "              </td>",
                         "            </tr>",
@@ -657,15 +655,7 @@ class TileLog:
         total_torrents = sum(row["torrent_count"] for row in table_rows)
         total_data_bytes = sum(row["total_data_bytes"] for row in table_rows)
         total_data_size_formatted = humanize.naturalsize(total_data_bytes, binary=True)
-        logs_label = "log" if total_logs == 1 else "logs"
-        torrents_label = "torrent" if total_torrents == 1 else "torrents"
-        if total_logs:
-            subtitle = (
-                f"Tracking {total_logs} {logs_label} "
-                f"with {total_torrents} {torrents_label}."
-            )
-        else:
-            subtitle = "No torrent feeds have been generated yet."
+        subtitle = "Last updated: " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M") + " UTC"
 
         html_lines = [
             "<!DOCTYPE html>",
@@ -698,7 +688,7 @@ class TileLog:
                     "              <th>Log</th>",
                     "              <th>Torrents</th>",
                     "              <th>Total Size</th>",
-                    "              <th>Resources</th>",
+                    "              <th>Feeds</th>",
                     "            </tr>",
                     "          </thead>",
                     "          <tbody>",
