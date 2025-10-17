@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 from multiprocessing import Process
 from pathlib import Path
 from typing import List, Optional
@@ -60,6 +61,18 @@ def log_loop(
     """
     fmt = f"%(asctime)s {log_name} %(levelname)s: %(message)s"
     coloredlogs.install(level="DEBUG" if verbose else "INFO", fmt=fmt)
+
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    file_handler = RotatingFileHandler(
+        log_dir / f"{log_name}.log",
+        maxBytes=10 * 1024 * 1024,  # 10 MB
+        backupCount=1,  # Keep 1 backup file
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(fmt))
+    logging.getLogger().addHandler(file_handler)
+
     tl = TileLog(
         log_name=log_name,
         monitoring_url=log_url,
