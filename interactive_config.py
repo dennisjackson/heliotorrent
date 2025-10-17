@@ -34,6 +34,8 @@ DEFAULT_CONFIG_TEMPLATE: Dict[str, Any] = {
     "torrent_dir": "torrents",
     "https_port": 8443,
     "http_port": 8080,
+    "tls_cert": None,
+    "tls_key": None,
     "feed_url_base": "http://127.0.0.1:8080/torrents",
     "scraper_contact_email": None,
     "frequency": 0,
@@ -87,7 +89,6 @@ def extract_logs_from_log_list(
 
     for operator in log_list.get("operators", []):
         for tiled_log in operator.get("tiled_logs", []):
-            # Skip logs that are not currently qualified or active
 
             if tiled_log.get('log_type') == "test":
                 logging.info(
@@ -97,7 +98,7 @@ def extract_logs_from_log_list(
                 continue
 
             status = tiled_log.get("state")
-            if not status or ("qualified" not in status and "active" not in status):
+            if not status or ("qualified" not in status and "active" not in status and "usable" not in status):
                 logging.info(
                     "Skipping log %s with state %s",
                     tiled_log.get("description", "<unknown>"),
@@ -194,8 +195,12 @@ def _sanitize_domain(domain: str) -> str:
     return domain.strip("/")
 
 
-def run_interactive_config() -> Dict[str, Any]:
-    """Interactively prompt the user for configuration values."""
+def run_interactive_config() -> tuple[Dict[str, Any], str]:
+    """Interactively prompt the user for configuration values.
+
+    Returns:
+        A tuple of (config_dict, save_path)
+    """
 
     print("Interactive config generation. Press Enter to accept defaults.")
     config = get_default_config()
@@ -216,6 +221,11 @@ def run_interactive_config() -> Dict[str, Any]:
     domain = _prompt_with_default(
         "Domain name where Heliotorrent will be hosted", "127.0.0.1"
     )
+    config["tls_cert"] = _prompt_with_default(
+        "Path to TLS certificate file", f"/etc/letsencrypt/live/{domain}/fullchain.pem")
+
+    config["tls_key"] = _prompt_with_default(
+        "Path to TLS private key file", f"/etc/letsencrypt/live/{domain}/privkey.pem")
 
     protocol = "https" if use_https else "http"
     port = config['https_port'] if use_https else config['http_port']
@@ -251,7 +261,12 @@ def run_interactive_config() -> Dict[str, Any]:
             print(f"Failed to fetch log list, keeping example entry: {exc}")
             config["logs"] = get_default_config()["logs"]
 
-    return config
+    # Ask for save location
+    save_path = _prompt_with_default(
+        "Where to save the config file", "config.yml"
+    )
+
+    return config, save_path
 
 
 __all__ = [

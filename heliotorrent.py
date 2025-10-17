@@ -160,8 +160,18 @@ if __name__ == "__main__":
 
     if args.generate_config:
         if args.interactive:
-            interactive_config = run_interactive_config()
-            print(render_config(interactive_config))
+            interactive_config, save_path = run_interactive_config()
+            config_content = render_config(interactive_config)
+            
+            # Save to file
+            try:
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    f.write(config_content)
+                print(f"Configuration saved to {save_path}")
+            except IOError as e:
+                print(f"Error saving configuration to {save_path}: {e}")
+                print("Configuration content:")
+                print(config_content)
         else:
             print(render_config(get_default_config()))
         sys.exit(0)
