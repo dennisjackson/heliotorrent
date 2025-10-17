@@ -4,7 +4,7 @@ use axum::{
     body::Body,
     extract::Path,
     http::{HeaderMap, Method, Response, StatusCode, header},
-    response::IntoResponse,
+    response::{IntoResponse, Redirect},
     routing::get,
 };
 use clap::Parser;
@@ -246,6 +246,9 @@ pub fn create_multi_router(log_caches: Vec<ProxyState>, static_dir: String) -> R
         webseed_router = webseed_router.nest(&format!("/{}", name), log_router);
     }
     app = app.nest("/webseed", webseed_router);
+
+    // Add root redirect
+    app = app.route("/", get(|| async { Redirect::permanent("/torrents/") }));
 
     // Add statistics endpoint
     app = app.route("/statistics", get(statistics_handler).with_state(stats));
