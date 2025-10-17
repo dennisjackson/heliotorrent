@@ -509,6 +509,8 @@ class TileLog:
             "      </header>",
             '      <ul class="meta-list">',
             f'        <li class="badge">Total data: {total_size_formatted}</li>',
+            f'        <li class="badge">Torrents: {len(torrents)}</li>',
+
             "      </ul>",
         ]
 
@@ -677,7 +679,7 @@ class TileLog:
             html_lines.extend(
                 [
                     '      <ul class="meta-list">',
-                    f"        <li class=\"badge\">Feeds: {total_logs}</li>",
+                    f"        <li class=\"badge\">Logs: {total_logs}</li>",
                     f"        <li class=\"badge\">Torrents: {total_torrents}</li>",
                     f"        <li class=\"badge\">Total data: {total_data_size_formatted}</li>",
                     "      </ul>",
