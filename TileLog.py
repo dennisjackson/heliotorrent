@@ -461,7 +461,7 @@ class TileLog:
         with open(manifest_path, "w", encoding="utf-8") as manifest_file:
             json.dump(manifest, manifest_file, indent=2)
             manifest_file.write("\n")
-        logging.info(
+        logging.debug(
             f"Wrote {manifest_path} with {len(manifest_entries)} torrent entries"
         )
         return manifest
@@ -580,7 +580,7 @@ class TileLog:
         html_path = os.path.join(self.torrents_dir, "index.html")
         with open(html_path, "w", encoding="utf-8") as html_file:
             html_file.write(html_content)
-        logging.info(f"Wrote {html_path} for torrent index")
+        logging.debug(f"Wrote {html_path} for torrent index")
 
     def write_root_index(self):
         try:
@@ -784,7 +784,7 @@ class TileLog:
         index_path = os.path.join(self.torrents_root_dir, "index.html")
         with open(index_path, "w", encoding="utf-8") as index_file:
             index_file.write(html_content)
-        logging.info(
+        logging.debug(
             f"Wrote {index_path} listing {len(table_rows)} torrent feed directories"
         )
 
@@ -801,7 +801,7 @@ class TileLog:
             self.add_torrent_to_feed(fg, p)
         fp = os.path.join(self.torrents_dir, "feed.xml")
         fg.rss_file(fp, pretty=True)
-        logging.info(f"Wrote {fp} with {len(paths)} torrent files")
+        logging.debug(f"Wrote {fp} with {len(paths)} torrent files")
         manifest = self.write_torrent_manifest(paths)
         self.write_torrent_index_html(manifest)
         self.write_root_index()
