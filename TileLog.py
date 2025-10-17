@@ -248,7 +248,7 @@ class TileLog:
             "--input-file=-",
             "--no-clobber",
             "--retry-connrefused",
-            # "--retry-on-host-error",
+            "--retry-on-http-error=*,'!404'",
             f"--directory-prefix={self.tiles_dir}",
             "--force-directories",
             "--no-host-directories",
@@ -468,7 +468,7 @@ class TileLog:
             "<head>",
             '  <meta charset="utf-8">',
             '  <meta name="viewport" content="width=device-width, initial-scale=1">',
-            f"  <title>{self.log_name} Torrents</title>",
+            f"  <title>{self.log_name.replace('_', ' ')} Torrents</title>",
             f'  <link rel="stylesheet" href="{stylesheet_path}">',
             "</head>",
             "<body>",
@@ -477,7 +477,7 @@ class TileLog:
             "      <header>",
             '        <h1 class="page-title">',
             '          <span class="icon icon-log" aria-hidden="true"></span>',
-            f"          {self.log_name}",
+            f"          {self.log_name.replace('_', ' ')}",
             "        </h1>",
             f"        <p class=\"page-subtitle\">Last updated {last_updated_display}</p>",
             '        <div class="actions">',
@@ -603,12 +603,16 @@ class TileLog:
                 manifest_data.get("log_name")
                 if manifest_data and manifest_data.get("log_name")
                 else entry
-            )
+            ).replace('_', ' ')
             torrent_count = (
                 len(manifest_data.get("torrents", []))
                 if manifest_data
                 else len(torrent_files)
             )
+
+            # Skip logs with 0 torrents
+            if torrent_count == 0:
+                continue
 
             log_link = f"{entry}/index.html" if os.path.exists(html_path) else None
             rss_link = f"{entry}/feed.xml" if os.path.exists(feed_path) else None
