@@ -95,7 +95,7 @@ def log_loop(
             for start_index, stop_index in missing_ranges:
                 missing = sum([end - start for start, end in missing_ranges])
                 logging.info(
-                    f"Missing {missing} entries across {len(missing_ranges)} torrents. {(latest_size - missing) / latest_size * 100:.2f}% Complete"
+                    f"{(latest_size - missing) / latest_size * 100:.2f}% Complete. Missing {len(missing_ranges)} torrents."
                 )
                 logging.debug(f"Processing range {start_index} to {stop_index}")
                 tl.download_tiles(start_index, stop_index)
