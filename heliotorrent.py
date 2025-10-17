@@ -7,7 +7,6 @@ and generates RSS feeds for the log data.
 """
 
 import argparse
-import json
 import logging
 import os
 import random
@@ -15,15 +14,19 @@ import shutil
 import subprocess
 import sys
 import time
-import urllib.request
 from multiprocessing import Process
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import coloredlogs
 import yaml
 
 from TileLog import TileLog, build_user_agent
+from interactive_config import (
+    get_default_config,
+    render_config,
+    run_interactive_config,
+)
 
 
 def log_loop(
@@ -119,75 +122,6 @@ def log_loop(
                 sys.exit(0)
 
 
-def fetch_log_list(url: str) -> Dict[str, Any]:
-    """
-    Fetch and parse the CT log list from the given URL.
-
-    Args:
-        url: URL to fetch the log list from
-
-    Returns:
-        Parsed JSON data as a dictionary
-    """
-    with urllib.request.urlopen(url) as response:
-        data = response.read()
-    return json.loads(data)
-
-
-def generate_config_from_log_list(
-    log_list: Dict[str, Any], data_dir: str, torrent_dir: str, feed_url_base: str
-) -> str:
-    """
-    Generate a YAML config from the CT log list.
-
-    Args:
-        log_list: Parsed log list JSON
-        data_dir: Directory to save downloaded tiles
-        torrent_dir: Directory to store generated torrent files
-        feed_url_base: Base URL for the RSS feed
-
-    Returns:
-        YAML config as a string
-    """
-    config = {
-        "data_dir": data_dir,
-        "torrent_dir": torrent_dir,
-        "feed_url_base": feed_url_base,
-        "scraper_contact_email": "scraper@example.com",
-        "frequency": 3600,
-        "entry_limit": None,
-        "delete_tiles": True,
-        "logs": [],
-    }
-
-    # current_time = datetime.now().isoformat()
-
-    for operator in log_list.get("operators", []):
-        # operator_name = operator.get("name", "Unknown")
-
-        # Process tiled logs
-        for tiled_log in operator.get("tiled_logs", []):
-            monitoring_url = tiled_log.get("monitoring_url")
-            if not monitoring_url:
-                logging.error("No url for tiled log, skipping")
-                continue
-
-            # Create sanitized name for the log
-            description = tiled_log.get("description", "")
-            log_name = (
-                description.replace(" ", "_").replace("'", "").replace("/", "_").lower()
-            )
-
-            config["logs"].append(
-                {
-                    "name": log_name,
-                    "log_url": monitoring_url,
-                }
-            )
-
-    return yaml.dump(config, default_flow_style=False, sort_keys=False)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Build torrents for Sunlight Logs",
@@ -203,15 +137,9 @@ if __name__ == "__main__":
         help="Generate an example YAML configuration file and exit.",
     )
     parser.add_argument(
-        "--generate-config-from-log-list",
-        nargs="?",
-        const="https://www.gstatic.com/ct/log_list/v3/all_logs_list.json",
-        help="Generate a config from the CT log list (default: https://www.gstatic.com/ct/log_list/v3/all_logs_list.json)",
-    )
-    parser.add_argument(
-        "--feed-url-base",
-        default="http://127.0.0.1/torrents",
-        help="Base URL for the RSS feed when generating config from log list",
+        "--interactive",
+        action="store_true",
+        help="Interactively populate configuration values when used with --generate-config.",
     )
     parser.add_argument(
         "--verbose",
@@ -227,69 +155,19 @@ if __name__ == "__main__":
     if not logging.getLogger().hasHandlers():
         logging.basicConfig(level=logging.INFO)
 
-    EXAMPLE_CONFIG = """\
-# Global settings for Heliotorrent
-# Directory to save downloaded tiles
-data_dir: "data"
-# Directory to store generated torrent files
-torrent_dir: "torrents"
-https_port: 8443
-http_port: 8080
-#tls_cert: Path
-#tls_key: Path
-# Base URL for RSS feeds. The feed for each log will be at {feed_url_base}/{log_name}/feed.xml
-feed_url_base: "http://127.0.0.1/torrents"
-scraper_contact_email: null
-# How often to run in seconds (0 for one-time run, 3600 is a good default)
-frequency: 0
-# Maximum number of entries to fetch (null for no limit, 1048576 for 1 torrent)
-entry_limit: 1048576
-# Delete used tiles after processing
-delete_tiles: true
-# Global webseeds to add to all torrents. This can be overridden on a per-log basis.
-# Each log's webseed will be set to <global webseed>/<log_name>/
-webseeds:
-  - "http://global.webseed.example.com/webseed/"
-
-# List of logs to monitor
-logs:
-  - # A friendly name for this log
-    name: "tuscolo2026h1"
-    # URL of the log to scrape
-    log_url: "https://tuscolo2026h1.skylight.geomys.org/"
-    # The following values can be uncommented to override the global settings.
-    # feed_url: "http://127.0.0.1/tuscolo2026h1/feed.xml"
-    # frequency: 300
-    # entry_limit: null
-    # delete_tiles: false
-    # webseeds:
-    #  - "http://webseed.example.com/"
-
-# You can add more logs here. Optional keys will use default values.
-#  - name: "another-log"
-#    log_url: "https://another.log.server/log/"
-"""
+    if args.interactive and not args.generate_config:
+        parser.error("--interactive can only be used together with --generate-config.")
 
     if args.generate_config:
-        print(EXAMPLE_CONFIG)
+        if args.interactive:
+            interactive_config = run_interactive_config()
+            print(render_config(interactive_config))
+        else:
+            print(render_config(get_default_config()))
         sys.exit(0)
 
-    if args.generate_config_from_log_list:
-        try:
-            log_list = fetch_log_list(args.generate_config_from_log_list)
-            config_yaml = generate_config_from_log_list(
-                log_list, "data", "torrents", args.feed_url_base
-            )
-            print(config_yaml)
-            sys.exit(0)
-        except Exception as e:
-            logging.error(f"Error generating config from log list: {e}")
-            sys.exit(1)
-
     if not args.config:
-        parser.error(
-            "--config is required unless --generate-config or --generate-config-from-log-list is used."
-        )
+        parser.error("--config is required unless --generate-config is used.")
 
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
@@ -301,7 +179,7 @@ logs:
     # Extract global settings
     data_dir = config.get("data_dir", "data")
     torrent_dir = config.get("torrent_dir", "torrents")
-    global_webseeds = config.get("webseeds")
+    global_webseeds = config.get("webseeds") or []
     feed_url_base = config.get("feed_url_base")
     frequency = config.get("frequency", 300)
     entry_limit = config.get("entry_limit")
@@ -361,9 +239,12 @@ logs:
             feed_url = f"{feed_url_base.rstrip('/')}/{name}/feed.xml"
 
         # Use per-log webseeds if available, otherwise use global webseeds
-        webseeds = log_config.get("webseeds", None)
+        webseeds = log_config.get("webseeds")
         if not webseeds:
-            webseeds = [f"{x.rstrip('/')}/{name}/" for x in global_webseeds]
+            if global_webseeds:
+                webseeds = [f"{x.rstrip('/')}/{name}/" for x in global_webseeds]
+            else:
+                webseeds = None
 
         p = Process(
             target=log_loop,
