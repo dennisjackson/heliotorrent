@@ -3,7 +3,7 @@ use axum::{
     Router,
     body::Body,
     extract::Path,
-    http::{HeaderMap, Response, StatusCode, header},
+    http::{HeaderMap, Method, Response, StatusCode, header},
     response::IntoResponse,
     routing::get,
 };
@@ -18,6 +18,7 @@ use std::{
 };
 use tokio::fs;
 use tokio::sync::Mutex;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tracing::{debug, error, info, instrument, warn};
 
@@ -256,7 +257,11 @@ pub fn create_multi_router(log_caches: Vec<ProxyState>, static_dir: String) -> R
     );
     app = app.nest_service("/torrents", ServeDir::new(static_dir));
 
-    app
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET]);
+
+    app.layer(cors)
 }
 
 fn format_number(num: u64) -> String {
