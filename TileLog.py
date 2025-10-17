@@ -432,7 +432,7 @@ class TileLog:
             created = datetime.fromtimestamp(
                 os.path.getmtime(path), tz=timezone.utc
             ).isoformat()
-            
+
             # Get the actual data size from the torrent file
             torrent_info = get_torrent_file_info(path)
             if torrent_info:
@@ -440,7 +440,7 @@ class TileLog:
             else:
                 data_size_bytes = 0
                 logging.warning(f"Could not read torrent file {path}, size will be 0")
-            
+
             manifest_entries.append(
                 {
                     "start_index": start_index,
@@ -473,7 +473,7 @@ class TileLog:
         stylesheet_path = "../style.css"  # Relative to individual log directory
         torrents = manifest["torrents"]
         last_updated_display = self._format_timestamp(manifest.get("last_updated"))
-        
+
         # Calculate total data available in bytes
         total_bytes = sum(t.get("data_size_bytes", 0) for t in torrents)
         total_size_formatted = humanize.naturalsize(total_bytes, binary=True)
@@ -626,6 +626,13 @@ class TileLog:
                 else len(torrent_files)
             )
 
+            # Calculate total data size for this feed
+            total_data_bytes = 0
+            if manifest_data and "torrents" in manifest_data:
+                total_data_bytes = sum(
+                    t.get("data_size_bytes", 0) for t in manifest_data["torrents"]
+                )
+
             # Skip logs with 0 torrents
             if torrent_count == 0:
                 continue
@@ -641,12 +648,15 @@ class TileLog:
                     "rss_link": rss_link,
                     "json_link": json_link,
                     "torrent_count": torrent_count,
+                    "total_data_bytes": total_data_bytes,
                 }
             )
 
         stylesheet_path = "style.css"  # Relative to root torrents directory
         total_logs = len(table_rows)
         total_torrents = sum(row["torrent_count"] for row in table_rows)
+        total_data_bytes = sum(row["total_data_bytes"] for row in table_rows)
+        total_data_size_formatted = humanize.naturalsize(total_data_bytes, binary=True)
         logs_label = "log" if total_logs == 1 else "logs"
         torrents_label = "torrent" if total_torrents == 1 else "torrents"
         if total_logs:
@@ -679,6 +689,7 @@ class TileLog:
                     '      <ul class="meta-list">',
                     f"        <li class=\"badge\">Feeds: {total_logs}</li>",
                     f"        <li class=\"badge\">Torrents: {total_torrents}</li>",
+                    f"        <li class=\"badge\">Total data: {total_data_size_formatted}</li>",
                     "      </ul>",
                     '      <div class="table-wrapper">',
                     "        <table>",
@@ -686,6 +697,7 @@ class TileLog:
                     "            <tr>",
                     "              <th>Log</th>",
                     "              <th>Torrents</th>",
+                    "              <th>Total Size</th>",
                     "              <th>Resources</th>",
                     "            </tr>",
                     "          </thead>",
@@ -745,6 +757,9 @@ class TileLog:
                         "              </td>",
                         "              <td>",
                         f"                <span class=\"badge\">{row['torrent_count']} file{'s' if row['torrent_count'] != 1 else ''}</span>",
+                        "              </td>",
+                        "              <td>",
+                        f"                {humanize.naturalsize(row['total_data_bytes'], binary=True)}",
                         "              </td>",
                         "              <td>",
                         '                <div class="actions">',
