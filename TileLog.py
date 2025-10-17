@@ -458,7 +458,7 @@ class TileLog:
         base_url = self.feed_url.rsplit("/", 1)[0]
         feed_url = self.feed_url
         json_url = f"{base_url}/torrents.json"
-        stylesheet_path = os.path.join(self.torrents_root_dir, PUBLIC_STYLESHEET_NAME).replace(os.path.sep, "/")
+        stylesheet_path = "../style.css"  # Relative to individual log directory
         torrents = manifest["torrents"]
         last_updated_display = self._format_timestamp(manifest.get("last_updated"))
 
@@ -624,7 +624,7 @@ class TileLog:
                 }
             )
 
-        stylesheet_path = PUBLIC_STYLESHEET_NAME
+        stylesheet_path = "style.css"  # Relative to root torrents directory
         total_logs = len(table_rows)
         total_torrents = sum(row["torrent_count"] for row in table_rows)
         logs_label = "log" if total_logs == 1 else "logs"
