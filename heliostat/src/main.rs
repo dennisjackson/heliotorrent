@@ -27,6 +27,11 @@ use rustls_pemfile::{certs, private_key};
 use std::io::BufReader;
 use tokio_rustls::rustls::{self};
 
+const GIT_COMMIT: &str = match option_env!("GIT_COMMIT") {
+    Some(commit) => commit,
+    None => "unknown",
+};
+
 #[derive(Default, Clone)]
 pub struct LogStats {
     bytes_served: u64,
@@ -134,8 +139,8 @@ async fn launch_proxy(config: Config) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     let user_agent = format!(
-        "Heliotorrent v0.0.1 scraper-contact:{}",
-        &config.scraper_contact_email
+        "Heliostat/{} scraper-contact:{}",
+        GIT_COMMIT, &config.scraper_contact_email
     );
     let client = Client::builder()
         .user_agent(user_agent)
