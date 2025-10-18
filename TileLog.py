@@ -4,8 +4,6 @@ import logging
 import urllib.request
 from urllib.parse import urlsplit
 import os
-from concurrent.futures import ThreadPoolExecutor
-import math
 from datetime import datetime, timezone
 import random
 import time
@@ -237,12 +235,8 @@ class TileLog:
         p = os.path.join(self.checkpoints_dir, str(latest))
         return latest, p
 
-    def download_tiles(self, start_index=None, stop_index=None):
-        if start_index is None:
-            start_index = self.get_latest_tree_size(refresh=False)  # 0?
-        if stop_index is None:
-            stop_index = self.get_latest_tree_size(refresh=True)
-        tiles_to_scrape = (stop_index - start_index) // 256
+    def download_tiles(self, start_index, stop_index):
+        assert(start_index is not None and stop_index is not None)
         log_level = logging.getLogger().getEffectiveLevel()
         nested_dir_count = len(urlsplit(self.monitoring_url).path.split("/"))
         command = [
@@ -263,26 +257,13 @@ class TileLog:
         ]
         tiles = self.__get_leaf_tile_paths(
             start_index, stop_index
-        )  # todo fixme only downloads leafs
-        tiles = [self.monitoring_url + "/" + t for t in tiles]
-        random.shuffle(tiles)  # Shuffling ensures each worker gets a balanced load
-        logging.debug(
-            f"Identified {tiles_to_scrape} new tiles between {start_index} and {stop_index}"
         )
-
-        # Split 100 chunks across 10 workers
-        chunk_size = math.ceil(len(tiles) / 1)
-        chunks = [
-            (command, tiles[i : i + chunk_size])
-            for i in range(0, len(tiles), chunk_size)
-        ]
-
-        assert sum((len(x[1]) for x in chunks)) == len(tiles)
-        for command, tiles in chunks:
-            assert len(tiles) > 0
-
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            executor.map(run_scraper, chunks)
+        tiles = [self.monitoring_url + "/" + t for t in tiles]
+        random.shuffle(tiles)
+        logging.debug(
+            f"Identified {len(tiles)} new tiles between {start_index} and {stop_index}"
+        )
+        run_scraper((command, tiles))
         logging.debug(
             f"Fetched all tiles between entries {start_index} and {stop_index}"
         )
