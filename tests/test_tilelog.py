@@ -12,6 +12,7 @@ def tile_log(monkeypatch):
     logging.basicConfig(level=logging.DEBUG, force=True)  # Enable debug logs
     monkeypatch.setattr("heliotorrent.lib.TileLog.FETCH_CHECKPOINT_BACKOFF", 5)
     monitoring_url = "https://tuscolo2026h1.skylight.geomys.org/"
+    test_dir = "test"
     storage_dir = "test/storage"
     torrent_dir = "test/torrents"
     feed_url = "http://localhost:8000/feed.xml"
@@ -45,6 +46,8 @@ def tile_log(monkeypatch):
         shutil.rmtree(storage_dir)
     if os.path.exists(torrent_dir):
         shutil.rmtree(torrent_dir)
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
 
 
 def test_initialization(tile_log):
