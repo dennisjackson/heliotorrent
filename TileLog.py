@@ -9,6 +9,7 @@ import random
 import time
 import re
 import shutil
+import subprocess
 
 from feedgen.feed import FeedGenerator
 
@@ -22,7 +23,26 @@ from util import (
     get_torrent_file_info,
 )
 
-VERSION = "v0.0.0"
+
+def _get_version() -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+        )
+        version = result.stdout.strip()
+        if version:
+            return version
+    except Exception as exc:
+        logging.error("Unable to derive git version; falling back to default: %s", exc)
+    return "UNKNOWN"
+
+
+VERSION = _get_version()
 
 
 def build_user_agent(contact_email: str) -> str:
