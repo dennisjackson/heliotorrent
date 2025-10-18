@@ -98,6 +98,7 @@ class TileLog:
             logging.error(
                 f"Error fetching trackers from {TRACKER_LIST_URL}", exc_info=e
             )
+            self.trackers = []
         for x in [
             self.storage_dir,
             self.tiles_dir,
@@ -149,9 +150,8 @@ class TileLog:
 
             if existing_content != expected_content:
                 logging.error(
-                    f"Existing README at {readme_path} has different content than expected. Changing this file will cause issues with the existing torrents."
+                    f"Existing README at {readme_path} has different content than expected. Changing this file will cause issues with the existing torrents. Continuing with existing file."
                 )
-                exit(-1)
         else:
             # File doesn't exist, create it
             with open(readme_path, "w", encoding="utf-8") as f:
