@@ -11,7 +11,8 @@ import re
 import shutil
 
 from feedgen.feed import FeedGenerator
-import humanize
+
+from tilelog_html import write_root_index, write_torrent_index_html
 
 from util import (
     get_data_tile_paths,
@@ -106,19 +107,6 @@ class TileLog:
             os.makedirs(x, exist_ok=True)
         self._install_static_assets()
         self.generate_readme()
-
-    @staticmethod
-    def _format_timestamp(timestamp):
-        """Return YYYY-MM-DD HH:MM in UTC for ISO timestamps; fallback to original on error."""
-        if not timestamp:
-            return "Unknown"
-        try:
-            dt = datetime.fromisoformat(timestamp)
-        except (TypeError, ValueError):
-            return timestamp
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     def _install_static_assets(self):
         if not os.path.exists(DEFAULT_TORRENT_STYLESHEET):
@@ -447,330 +435,6 @@ class TileLog:
         )
         return manifest
 
-    def write_torrent_index_html(self, manifest):
-        base_url = self.feed_url.rsplit("/", 1)[0]
-        feed_url = self.feed_url
-        json_url = f"{base_url}/torrents.json"
-        stylesheet_path = "../style.css"  # Relative to individual log directory
-        torrents = manifest["torrents"]
-        last_updated_display = self._format_timestamp(manifest.get("last_updated"))
-
-        # Calculate total data available in bytes
-        total_bytes = sum(t.get("data_size_bytes", 0) for t in torrents)
-        total_size_formatted = humanize.naturalsize(total_bytes, binary=True)
-
-        html_lines = [
-            "<!DOCTYPE html>",
-            '<html lang="en">',
-            "<head>",
-            '  <meta charset="utf-8">',
-            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
-            f"  <title>{self.log_name.replace('_', ' ')} Torrents</title>",
-            f'  <link rel="stylesheet" href="{stylesheet_path}">',
-            "</head>",
-            "<body>",
-            "  <main>",
-            '    <section class="card">',
-            "      <header>",
-            '        <h1 class="page-title">',
-            '          <span class="icon icon-log" aria-hidden="true"></span>',
-            f"          {self.log_name.replace('_', ' ')}",
-            "        </h1>",
-            f"        <p class=\"page-subtitle\">Last updated: {last_updated_display}</p>",
-            '        <div class="actions">',
-            f'          <a href="{feed_url}" class="icon-link">',
-            '            <span class="icon icon-rss" aria-hidden="true"></span>',
-            "            <span>RSS feed</span>",
-            "          </a>",
-            f'          <a href="{json_url}" class="icon-link">',
-            '            <span class="icon icon-json" aria-hidden="true"></span>',
-            "            <span>JSON manifest</span>",
-            "          </a>",
-            "        </div>",
-            "      </header>",
-            '      <ul class="meta-list">',
-            f'        <li class="badge">Total data: {total_size_formatted}</li>',
-            f'        <li class="badge">Torrents: {len(torrents)}</li>',
-
-            "      </ul>",
-        ]
-
-        if torrents:
-            html_lines.extend(
-                [
-                    '      <div class="table-wrapper">',
-                    "        <table>",
-                    "          <thead>",
-                    "            <tr>",
-                    "              <th>Starting Index</th>",
-                    "              <th>Data Size</th>",
-                    "              <th>Created</th>",
-                    "              <th>Torrent Files</th>",
-                    "            </tr>",
-                    "          </thead>",
-                    "          <tbody>",
-                ]
-            )
-
-            for entry in torrents:
-                created_display = self._format_timestamp(entry.get("creation_time"))
-                data_size_bytes = entry.get("data_size_bytes", 0)
-                data_size_formatted = humanize.naturalsize(data_size_bytes, binary=True)
-                html_lines.extend(
-                    [
-                        "            <tr>",
-                        f"              <td>{entry['start_index']:,}</td>",
-                        f"              <td>{data_size_formatted}</td>",
-                        "              <td>",
-                        '                <div class="cell-stack">',
-                        f"                  <span>{created_display}</span>",
-                        "                  <small>UTC</small>",
-                        "                </div>",
-                        "              </td>",
-                        "              <td>",
-                        f'                <a href="{entry["torrent_url"]}" class="icon-link">',
-                        '                  <span class="icon icon-torrent" aria-hidden="true"></span> <span class="torrent-name"> .torrent </span>',
-                        "                </a>",
-                        "              </td>",
-                        "            </tr>",
-                    ]
-                )
-
-            html_lines.extend(
-                [
-                    "          </tbody>",
-                    "        </table>",
-                    "      </div>",
-                ]
-            )
-        else:
-            html_lines.extend(
-                [
-                    '      <div class="empty-state">No torrents available yet.</div>',
-                ]
-            )
-
-        html_lines.extend(
-            [
-                "    </section>",
-                "  </main>",
-                f'  <footer>Generated by <a href="https://github.com/dennisjackson/heliotorrent">Heliotorrent</a> {VERSION}</footer>',
-                "</body>",
-                "</html>",
-            ]
-        )
-        html_content = "\n".join(html_lines) + "\n"
-        html_path = os.path.join(self.torrents_dir, "index.html")
-        with open(html_path, "w", encoding="utf-8") as html_file:
-            html_file.write(html_content)
-        logging.debug(f"Wrote {html_path} for torrent index")
-
-    def write_root_index(self):
-        try:
-            entries = sorted(
-                entry
-                for entry in os.listdir(self.torrents_root_dir)
-                if os.path.isdir(os.path.join(self.torrents_root_dir, entry))
-            )
-        except FileNotFoundError:
-            logging.warning(
-                f"Torrents root directory missing: {self.torrents_root_dir}"
-            )
-            return
-
-        table_rows = []
-        for entry in entries:
-            dir_path = os.path.join(self.torrents_root_dir, entry)
-            manifest_path = os.path.join(dir_path, "torrents.json")
-            feed_path = os.path.join(dir_path, "feed.xml")
-            html_path = os.path.join(dir_path, "index.html")
-            torrent_files = glob(os.path.join(dir_path, "*.torrent"))
-
-            manifest_data = None
-            if os.path.exists(manifest_path):
-                try:
-                    with open(manifest_path, "r", encoding="utf-8") as manifest_file:
-                        manifest_data = json.load(manifest_file)
-                except (json.JSONDecodeError, OSError) as exc:
-                    logging.warning(
-                        f"Unable to load manifest for {entry}: {exc}", exc_info=True
-                    )
-
-            display_name = (
-                manifest_data.get("log_name")
-                if manifest_data and manifest_data.get("log_name")
-                else entry
-            ).replace('_', ' ')
-            torrent_count = (
-                len(manifest_data.get("torrents", []))
-                if manifest_data
-                else len(torrent_files)
-            )
-
-            # Calculate total data size for this feed
-            total_data_bytes = 0
-            if manifest_data and "torrents" in manifest_data:
-                total_data_bytes = sum(
-                    t.get("data_size_bytes", 0) for t in manifest_data["torrents"]
-                )
-
-            # Skip logs with 0 torrents
-            if torrent_count == 0:
-                continue
-
-            log_link = f"{entry}/index.html" if os.path.exists(html_path) else None
-            rss_link = f"{entry}/feed.xml" if os.path.exists(feed_path) else None
-            json_link = f"{entry}/torrents.json" if os.path.exists(manifest_path) else None
-
-            table_rows.append(
-                {
-                    "name": display_name,
-                    "log_link": log_link,
-                    "rss_link": rss_link,
-                    "json_link": json_link,
-                    "torrent_count": torrent_count,
-                    "total_data_bytes": total_data_bytes,
-                }
-            )
-
-        stylesheet_path = "style.css"  # Relative to root torrents directory
-        total_logs = len(table_rows)
-        total_torrents = sum(row["torrent_count"] for row in table_rows)
-        total_data_bytes = sum(row["total_data_bytes"] for row in table_rows)
-        total_data_size_formatted = humanize.naturalsize(total_data_bytes, binary=True)
-        subtitle = "Last updated: " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M") + " UTC"
-
-        html_lines = [
-            "<!DOCTYPE html>",
-            '<html lang="en">',
-            "<head>",
-            '  <meta charset="utf-8">',
-            '  <meta name="viewport" content="width=device-width, initial-scale=1">',
-            "  <title>Heliotorrent Feeds</title>",
-            f'  <link rel="stylesheet" href="{stylesheet_path}">',
-            "</head>",
-            "<body>",
-            "  <main>",
-            '    <section class="card">',
-            '      <h1 class="page-title">Heliotorrent Feeds</h1>',
-            f'      <p class="page-subtitle">{subtitle}</p>',
-        ]
-
-        if total_logs:
-            html_lines.extend(
-                [
-                    '      <ul class="meta-list">',
-                    f"        <li class=\"badge\">Logs: {total_logs}</li>",
-                    f"        <li class=\"badge\">Torrents: {total_torrents}</li>",
-                    f"        <li class=\"badge\">Total data: {total_data_size_formatted}</li>",
-                    "      </ul>",
-                    '      <div class="table-wrapper">',
-                    "        <table>",
-                    "          <thead>",
-                    "            <tr>",
-                    "              <th>Log</th>",
-                    "              <th>Torrents</th>",
-                    "              <th>Total Size</th>",
-                    "              <th>Feeds</th>",
-                    "            </tr>",
-                    "          </thead>",
-                    "          <tbody>",
-                ]
-            )
-
-            for row in table_rows:
-                if row["log_link"]:
-                    name_cell = [
-                        '            <a href="'
-                        + row["log_link"]
-                        + '" class="icon-link is-primary">',
-                        '              <span class="icon icon-log" aria-hidden="true"></span>',
-                        f"              <span>{row['name']}</span>",
-                        "            </a>",
-                    ]
-                else:
-                    name_cell = [
-                        '            <div class="cell-stack">',
-                        f"              <span>{row['name']}</span>",
-                        '              <small>Index not available</small>',
-                        "            </div>",
-                    ]
-
-                rss_cell = (
-                    [
-                        '            <a href="'
-                        + row["rss_link"]
-                        + '" class="icon-link">',
-                        '              <span class="icon icon-rss" aria-hidden="true"></span>',
-                        "              <span>RSS</span>",
-                        "            </a>",
-                    ]
-                    if row["rss_link"]
-                    else ['            <span class="muted">RSS unavailable</span>']
-                )
-
-                json_cell = (
-                    [
-                        '            <a href="'
-                        + row["json_link"]
-                        + '" class="icon-link">',
-                        '              <span class="icon icon-json" aria-hidden="true"></span>',
-                        "              <span>JSON</span>",
-                        "            </a>",
-                    ]
-                    if row["json_link"]
-                    else ['            <span class="muted">JSON unavailable</span>']
-                )
-
-                html_lines.extend(
-                    [
-                        "            <tr>",
-                        "              <td>",
-                        *name_cell,
-                        "              </td>",
-                        "              <td>",
-                        f"                <span class=\"badge\">{row['torrent_count']} file{'s' if row['torrent_count'] != 1 else ''}</span>",
-                        "              </td>",
-                        "              <td>",
-                        f"                {humanize.naturalsize(row['total_data_bytes'], binary=True)}",
-                        "              </td>",
-                        "              <td>",
-                        '                <div class="actions">',
-                        *rss_cell,
-                        *json_cell,
-                        "                </div>",
-                        "              </td>",
-                        "            </tr>",
-                    ]
-                )
-
-            html_lines.extend(
-                [
-                    "          </tbody>",
-                    "        </table>",
-                    "      </div>",
-                ]
-            )
-        else:
-            html_lines.append('      <div class="empty-state">Run Heliotorrent to publish your first feed.</div>')
-
-        html_lines.extend(
-            [
-                "    </section>",
-                "  </main>",
-                f'  <footer>Generated by <a href="https://github.com/dennisjackson/heliotorrent">Heliotorrent</a> {VERSION}</footer>',
-                "</body>",
-                "</html>",
-            ]
-        )
-        html_content = "\n".join(html_lines) + "\n"
-        index_path = os.path.join(self.torrents_root_dir, "index.html")
-        with open(index_path, "w", encoding="utf-8") as index_file:
-            index_file.write(html_content)
-        logging.debug(
-            f"Wrote {index_path} listing {len(table_rows)} torrent feed directories"
-        )
-
     def make_rss_feed(self):
         fg = FeedGenerator()
         fg.load_extension("torrent")
@@ -786,8 +450,17 @@ class TileLog:
         fg.rss_file(fp, pretty=True)
         logging.debug(f"Wrote {fp} with {len(paths)} torrent files")
         manifest = self.write_torrent_manifest(paths)
-        self.write_torrent_index_html(manifest)
-        self.write_root_index()
+        write_torrent_index_html(
+            log_name=self.log_name,
+            feed_url=self.feed_url,
+            manifest=manifest,
+            torrents_dir=self.torrents_dir,
+            version=VERSION,
+        )
+        write_root_index(
+            torrents_root_dir=self.torrents_root_dir,
+            version=VERSION,
+        )
 
     def delete_tiles(self, start_index, stop_index):
         data_tile_paths = list(get_data_tile_paths(start_index, stop_index, stop_index))
