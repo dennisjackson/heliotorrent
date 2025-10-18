@@ -103,20 +103,19 @@ def log_loop(
         start_time = time.time()
         latest_size = tl.get_latest_tree_size(refresh=True)
         missing_ranges = tl.get_missing_torrent_ranges(0, latest_size)
-
-        if missing_ranges:
-            for start_index, stop_index in missing_ranges:
-                missing = sum([end - start for start, end in missing_ranges])
-                logging.info(
-                    f"{(latest_size - missing) / latest_size * 100:.2f}% Complete. Missing {len(missing_ranges)} torrents."
-                )
-                logging.debug(f"Processing range {start_index} to {stop_index}")
-                tl.download_tiles(start_index, stop_index)
-                tl.make_torrents([(start_index, stop_index)])
-                if delete_tiles:
-                    tl.delete_tiles(start_index, stop_index)
-                tl.make_rss_feed()
-        else:
+        while len(missing_ranges) > 0:
+            missing = sum([end - start for start, end in missing_ranges])
+            logging.info(
+                f"{(latest_size - missing) / latest_size * 100:.2f}% Complete. Missing {len(missing_ranges)} torrents."
+            )
+            start_index, stop_index = missing_ranges.pop(0)
+            logging.debug(f"Processing range {start_index} to {stop_index}")
+            tl.download_tiles(start_index, stop_index)
+            tl.make_torrents([(start_index, stop_index)])
+            if delete_tiles:
+                tl.delete_tiles(start_index, stop_index)
+            tl.make_rss_feed()
+        if len(missing_ranges) == 0:
             logging.info("100% Complete. All torrents are up to date.")
 
         running_time = time.time() - start_time
