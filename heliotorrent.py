@@ -22,8 +22,8 @@ from typing import List, Optional
 import coloredlogs
 import yaml
 
-from TileLog import TileLog, build_user_agent
-from interactive_config import (
+from lib.TileLog import TileLog, build_user_agent
+from lib.interactive_config import (
     get_default_config,
     render_config,
     run_interactive_config,

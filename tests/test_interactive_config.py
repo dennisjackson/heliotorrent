@@ -1,6 +1,5 @@
 
-
-import interactive_config
+from ..lib import interactive_config
 
 
 def test_fetch_log_list_parses_default_fixture():

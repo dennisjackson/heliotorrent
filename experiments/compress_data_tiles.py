@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from util import url_to_dir, get_data_tile_paths
+from lib.util import url_to_dir, get_data_tile_paths
 
 
 def compress_tile(input_path, output_path):

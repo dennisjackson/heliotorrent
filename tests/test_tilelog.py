@@ -2,15 +2,15 @@ import json
 import os
 import shutil
 import sys
-import pytest
 import logging
-from TileLog import TileLog, build_user_agent
+import pytest
+from ..lib.TileLog import TileLog, build_user_agent
 
 
 @pytest.fixture
 def tile_log(monkeypatch):
     logging.basicConfig(level=logging.DEBUG, force=True)  # Enable debug logs
-    monkeypatch.setattr("TileLog.FETCH_CHECKPOINT_BACKOFF", 5)
+    monkeypatch.setattr("heliotorrent.lib.TileLog.FETCH_CHECKPOINT_BACKOFF", 5)
     monitoring_url = "https://tuscolo2026h1.skylight.geomys.org/"
     storage_dir = "test/storage"
     torrent_dir = "test/torrents"
@@ -69,7 +69,7 @@ def test_download_tiles(tile_log):
 
 def test_make_torrents_and_rss_feed(tile_log, monkeypatch):
     # Monkeypatch to make the test faster
-    monkeypatch.setattr("TileLog.ENTRIES_PER_LEAF_TORRENT", 256)
+    monkeypatch.setattr("heliotorrent.lib.TileLog.ENTRIES_PER_LEAF_TORRENT", 256)
     start_index = 0
     stop_index = 4 * 256  # Small range for testing
     ranges = [(i, i + 256) for i in range(start_index, stop_index, 256)]

@@ -1,21 +1,20 @@
 from glob import glob
 import json
 import logging
-import urllib.request
-from urllib.parse import urlsplit
 import os
-from datetime import datetime, timezone
 import random
-import time
 import re
 import shutil
 import subprocess
+import time
+import urllib.request
+from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 from feedgen.feed import FeedGenerator
 
-from tilelog_html import write_root_index, write_torrent_index_html
-
-from util import (
+from .tilelog_html import write_root_index, write_torrent_index_html
+from .util import (
     get_data_tile_paths,
     get_hash_tile_paths,
     create_torrent_file,
@@ -44,7 +43,6 @@ def _get_version() -> str:
 
 VERSION = _get_version()
 
-
 def build_user_agent(contact_email: str) -> str:
     email = (contact_email or "").strip()
     if not email:
@@ -56,7 +54,8 @@ TRACKER_LIST_URL = (
     "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
 FETCH_CHECKPOINT_BACKOFF = 60
-STATIC_ASSETS_DIR = os.path.join(os.path.dirname(__file__), "static")
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_ASSETS_DIR = os.path.join(REPO_ROOT, "static")
 DEFAULT_TORRENT_STYLESHEET = os.path.join(STATIC_ASSETS_DIR, "torrents.css")
 PUBLIC_STYLESHEET_NAME = "style.css"
 

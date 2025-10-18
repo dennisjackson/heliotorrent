@@ -1,4 +1,4 @@
-from util import int_to_parts, get_hash_tile_paths
+from ..lib.util import int_to_parts, get_hash_tile_paths
 
 
 def to_list(y):
