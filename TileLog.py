@@ -49,7 +49,7 @@ def build_user_agent(contact_email: str) -> str:
     email = (contact_email or "").strip()
     if not email:
         raise ValueError("Contact email must be provided to build a user agent.")
-    return f"Heliotorrent {VERSION} Contact: {email}"
+    return f"Heliotorrent/{VERSION} Contact: {email}"
 
 ENTRIES_PER_LEAF_TORRENT = 4096 * 256  # 4096 tiles per torrent
 TRACKER_LIST_URL = (
