@@ -1,7 +1,3 @@
-# Enable rpc in Transmission
-# noglob uv tool install flexget[transmission]
-# flexget -c flexget.yml execute
-
 tasks:
   geomys-tuscolo2026h1:
     rss: https://heliostat.dennis-jackson.uk:8443/torrents/geomys_tuscolo2026h1/feed.xml

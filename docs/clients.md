@@ -22,10 +22,9 @@ Transmission does not natively support RSS feeds. However, FlexGet can poll feed
    - Restart the daemon and confirm the web UI or `transmission-remote` works.
 
 2) [Install FlexGet](https://www.flexget.com/Install):
-   - `uv tool install flexget` or
-   - `pipx install flexget` (or `pip install --user flexget`)
+   - `noglob uv tool install flexget[transmission]`
 
-4) Create a minimal FlexGet config at `~/.config/flexget/config.yml` or see the example in this repo `experiments/flexget.yaml`:
+3) Create a minimal FlexGet config at `~/.config/flexget/config.yml` or see the example config [provided](flexget.yml).
 
 ```yaml
 templates:
