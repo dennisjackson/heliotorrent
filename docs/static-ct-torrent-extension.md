@@ -4,8 +4,6 @@ This spec defines a mechanism for serving the Tiles used in Static Certificate T
 
 ## Conventions used in this document
 
-TODO: Reference CS2SP Spec
-
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [BCP 14][] [RFC 2119][] [RFC
@@ -18,7 +16,7 @@ document are to be interpreted as described in [BCP 14][] [RFC 2119][] [RFC
 
 This document is divided into three sections. Firstly, it lays out how Static CT tiles are packaged into individual torrents. Secondly, it describes how these individual torrents can be included in RSS and JSON feeds and made available for automatic consumption by clients. Finally, it describes how these torrents can be seeded via HTTP(S) and consumed by clients.
 
-This specification makes a number of decisions to maximize compatibility, deployability and simplicity. In particular, it focuses on making the vast majority of a log's data available over BitTorrent (>99.999%), leaving a small number of files, such as checkpoints and issuers that will need to be fetched over HTTP(S) as described in the[The Static Certificate Transparency API](https://c2sp.org/static-ct-api).
+This specification makes a number of decisions to maximize compatibility, deployability and simplicity. In particular, it focuses on making the vast majority of a log's data available over BitTorrent (>99.999%), leaving a small number of files, such as checkpoints and issuers that will need to be fetched over HTTP(S) as described in[The Static Certificate Transparency API](https://c2sp.org/static-ct-api).
 
 The party providing Tile Torrents need not be the log operator, it can be provided entirely by third parties on independent infrastructure. Log operators wanting to provide Tile Torrents need no specific infrastructure beyond a HTTP(S) server.
 
@@ -103,9 +101,9 @@ A torrent entry is a JSON Dict with the following structure:
 
 ### Advertising Feeds
 
-The RSS and JSON feeds for a torrent SHOULD be advertised in the log's manifest.
+Open Issue: Consider integration with the log's JSON manifest, which Clint Wilson has [proposed](https://groups.google.com/a/chromium.org/g/ct-policy/c/ikbxKXp_Nl4) specifying more formally.
 
-< TODO Link to Clint's Proposal >
+Alternative: Recommend a particular path off the monitoring prefix.
 
 ## Seeding Torrents
 
@@ -115,9 +113,7 @@ Once a torrent file has been produced and made available to download for clients
 
 However, BEP 19 and the Static CT API are incompatible with each other. This section describes how a HTTP server can act as a web seed for Tile Torrents.
 
-The Tile Torrent WebSeed may have a full copy of the log available locally or it may be fetch the log via the Static CT Monitoring API in order to respond to client's requests. If so, it MUST follow the relevant guidance for user agents etc. Use Caching. TODO.
-
-TODO: SHOULD be a local caching copy. MAY be a transparent proxy.
+The Tile Torrent WebSeed may have a full copy of the log available locally or it may be fetch the log via the Static CT Monitoring API in order to respond to client's requests. If so, it MUST follow the relevant guidance and policies for consuming logs such as an appropriate user-agent with contact details. The WebSeed must cache responses from the log, ideally indefinitely, in order to alleviate as much load as possible from the log operator.
 
 A Tile Torrent WebSeed for a specific Static CT log is configured defined by a URL Prefix. When a HTTP Request is received for that prefix, the WebSeed MUST trim the first directory from the request after that prefix. This is the torrent file's name.
 
