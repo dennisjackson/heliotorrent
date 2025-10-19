@@ -1,6 +1,6 @@
 # HelioTorrent
 
-![HelioTorrent logo](experiments/logo.png)
+![HelioTorrent logo](docs/logo.png)
 
 HelioTorrent packages Static Certificate Transparency (CT) tiles into .torrent files, publishes them via feeds and seeds them over HTTP(S).
 
