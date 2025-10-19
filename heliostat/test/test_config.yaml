@@ -1,0 +1,11 @@
+data_dir: test/data
+torrent_dir: test/torrents
+http_port: 8080
+feed_url: http://127.0.0.1/torrents
+scraper_contact_email: ""
+logs:
+
+- name: geomys_tuscolo2025h2
+  log_url: https://tuscolo2025h2.skylight.geomys.org/
+
+
