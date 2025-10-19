@@ -13,11 +13,18 @@ The two can be run together - and share a configuration file format - but can be
 
 HelioTorrent takes as input a configuration file described in [providers.md]. It writes its output to the specified output directory which takes the form:
 
-TODO: Output directory structure.
+* index.html
+* <for each log, there's a folder>
+    * <individual torrents>
+    * feed.xml
+    * index.html
+    * torrents.json
+
+This folder is intended to be published over HTTP(S).
 
 ### Workflow
 
-For each configured log, HelioTorrent begins a seperate process in the background which handles all the jobs for that log. Each log process runs the following cycle, which is laid out in <TODO>.py:
+For each configured log, HelioTorrent begins a seperate process in the background which handles all the jobs for that log. Each log process runs the following cycle:
 
 * Fetch the latest checkpoint from the log
 * Examine the output directory to see which torrents have been produced
@@ -62,8 +69,12 @@ One special case is the README.md file. This file exists in the torrents but not
 
 ## Development Practices
 
-* Tests
-* Cargo mutants
-* Subtree
-* Github workflows
-* Linting
+Heliotorrent uses pytest which can be invoked with `uv run pytest`. It relies on network connectivity because it will connect to some existing static CT logs (a bad practice). Heliostat uses `cargo test`.
+
+Heliotorrent is linted with `uv run ruff check`. Heliostat uses `cargo clippy` and `cargo fmt`.
+
+Heliostat is vendored as a git subtree. The subtree version can be bumped with:
+
+```
+git subtree pull --prefix=heliostat git@github.com:dennisjackson/heliostat.git master --squash
+```
