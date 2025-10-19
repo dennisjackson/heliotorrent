@@ -1,35 +1,36 @@
-# Heliotorrent
+# HelioTorrent
 
-![experiments/logo.png]
+![HelioTorrent logo](experiments/logo.png)
 
-Heliotorrent turns Static Certificate Transparency logs into torrents and seeds them.
+HelioTorrent packages Static Certificate Transparency (CT) tiles into .torrent files, publishes them via feeds and seeds them over HTTP(S).
 
-There's a [running instance](https://heliostat.dennis-jackson.uk:8443) you can browse. There's also a [draft specification](docs/spec.md) and a [design doc](docs/design.md).
+- Live demo: https://heliostat.dennis-jackson.uk:8443
+- Spec: [docs/spec.md](docs/spec.md)
+- Design: [docs/design.md](docs/design.md)
 
-## Consuming Tiles from HelioTorrent
+## Consume Tiles
 
-HelioTorrent is compatible with most existing BitTorrent clients. See the instructions in [docs/clients.md].
+HelioTorrent works with most BitTorrent clients that support RSS. See [docs/clients.md](docs/clients.md) for step‑by‑step guides (Transmission + FlexGet, qBittorrent, etc.).
 
+## Run HelioTorrent yourself
 
-## Running HelioTorrent as Provider
-
-See the detailed instructions in [docs/providers.md].
+Full instructions are in [docs/providers.md](docs/providers.md). The quick version is below.
 
 ### Requirements
 
-- Python with [`uv`](https://docs.astral.sh/uv/) is recommended
-- [`wget2`](https://gitlab.com/gnuwget/wget2) available on `PATH` (
-- Rust / Cargo.
+- Python (managed with `uv` is recommended)
+- `wget2` available on `PATH`
+- Rust/Cargo
 
 ### Install
 
-Install the Python dependencies:
+Install Python dependencies:
 
 ```bash
 uv sync --locked
 ```
 
-Compile the Heliostat Rust Crate:
+Build the Heliostat Rust crate:
 
 ```bash
 cd heliostat
@@ -38,14 +39,27 @@ cargo build --release
 
 ### Configure
 
-Heliotorrent reads a single YAML configuration file. You can start from the built-in template:
+HelioTorrent uses a single YAML config file. Generate one interactively:
 
 ```bash
-uv run python heliotorrent.py --generate-config --interactive
+uv run heliotorrent.py --generate-config --interactive
 ```
 
 ### Run
 
+Run HelioTorrent using your config file:
+
 ```bash
-uv run python heliotorrent.py --config config.yaml
+uv run heliotorrent.py --config config.yaml --heliostat heliostat/target/release/heliostat
 ```
+
+## Documentation
+
+- Consuming tiles: [docs/clients.md](docs/clients.md)
+- Operating a provider: [docs/providers.md](docs/providers.md)
+- Specification: [docs/spec.md](docs/spec.md)
+- Design notes: [docs/design.md](docs/design.md)
+
+## License
+
+Mozilla Public License - See [LICENSE](LICENSE).
