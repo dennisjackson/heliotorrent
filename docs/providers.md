@@ -8,7 +8,7 @@ Running HelioTorrent doesn't require any privileged access to a static CT log.
 
 HelioTorrent is a python application packaged with [uv]. HelioTorrent needs network access, roughly 2 GB of scratch space per log, and outputs generated torrent files and feeds to a specified folder. This folder can then be served over HTTP with Heliostat, or your preferred hosting platform of choice.
 
-1. Fetch a copy of the source with `git clone <TODO>`.
+1. Fetch a copy of the source with `git clone https://github.com/dennisjackson/heliotorrent.git`.
 2. Install the dependencies with `uv sync`. If you don't have a copy of `uv`, see the instructions [here](https://docs.astral.sh/uv/getting-started/installation/).
 3. Install wget2 via your package manage of choice.
 4. You can generate a configuration file interactively with the command `uv run heliotorrent.py --generate-config --interactive`. Heliotorrent will walk you through the varios options.
