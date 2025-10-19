@@ -9,40 +9,59 @@ Running HelioTorrent doesn't require any privileged access to a static CT log.
 HelioTorrent is a python application packaged with [uv]. HelioTorrent needs network access, roughly 2 GB of scratch space per log, and outputs generated torrent files and feeds to a specified folder. This folder can then be served over HTTP with Heliostat, or your preferred hosting platform of choice.
 
 1. Fetch a copy of the source with `git clone <TODO>`.
-2. Install the dependencies with `uv ...`. If you don't have a copy of `uv`, see the instructions here.
-3. Install wget2
-4. You can generate a configuration file interactively with the command `uv run heliotorrent.py --TODO`.
+2. Install the dependencies with `uv sync`. If you don't have a copy of `uv`, see the instructions [here](https://docs.astral.sh/uv/getting-started/installation/).
+3. Install wget2 via your package manage of choice.
+4. You can generate a configuration file interactively with the command `uv run heliotorrent.py --generate-config --interactive`. Heliotorrent will walk you through the varios options.
 
-The configuration file is YAML-formatted. A listing is given below:
+The configuration file is YAML-formatted. An example listing is given below:
 
-TODO.
+```yaml
+# Global settings for Heliotorrent
+# Configure directories, ports, and the base feed URL. Each log's feed defaults to <feed_url_base>/<log_name>/feed.xml.
+data_dir: data
+torrent_dir: torrents
+# https_port: 8443
+http_port: 8080
+# tls_cert: null
+# tls_key: null
+feed_url_base: http://127.0.0.1:8080/torrents
+scraper_contact_email: null #Required, this must bet set
+frequency: 3600
+entry_limit: 0
+delete_tiles: true
+webseeds:
+- http://127.0.0.1:8080/webseed/
+logs:
+- name: tuscolo2026h1
+  log_url: https://tuscolo2026h1.skylight.geomys.org/
+# You can add more logs here. Optional keys override the global defaults above.
+#  - name: "another-log"
+#    log_url: "https://another.log.server/log/"
+    # Optional Keys:
+    # feed_url: "http://127.0.0.1/alternative-location/feed.xml"
+    # frequency: 300
+    # entry_limit: null
+    # delete_tiles: false
+    # webseeds:
+    #  - "http://webseed.example.com/"
+```
 
-5. You can now run HelioTorrent with `uv run heliotorrent.py --TODO`.
+5. You can now run HelioTorrent with `uv run heliotorrent.py --config <your_config_file>`.
 
-By default HelioTorrent will log messages to the `log` directory and to the console. You can configure HelioTorrent as a service with systemD:
-
-TODO.
-
-Or simply leaving it running in the background with `termux`:
+However, you properly want to run Heliostat, which acts as webseed and shares the same config file as well below.
 
 ## Setting up Heliostat
 
-Heliostat is a rust application packaged in the heliostat directory. If you'd like to build it, you need to invoke `cargo build --release`. It shares the same configuration file format as HelioTorrent and it's interactive configuration file generator will guide you through setup.
+Heliostat is a rust application packaged in the heliostat directory. If you'd like to build it, you need to invoke `cargo build --release` in the heliostat directory. It shares the same configuration file format as HelioTorrent.
 
-The key options are:
+HTTPS support is nice to have, if not essential, and can be configured via `certbot`. You'll need to make the resulting TLS certificate and private key readable to Heliostat and then configure the paths and the HTTPS port in the config file.
 
-TODO.
+Although can run heliostat independently, HelioTorrent can also take care of it for you, just extend the heliotorrent invoation with `--heliostat <path-to-binary>`. So all together:
 
-HTTPS support is nice to have, if not essential, and can be configured via `certbot`.
+`uv run heliotorrent.py --config <your_config_file> --heliostat heliostat/target/release/heliostat`
 
-You don't need to run Heliostat independly, simply extend the heliotorrent invoation with `--heliostat <path-to-binary>. By default, that would look like:
+Heliostat could be run independently of HelioTorrent, however, it does need to serve the
 
-`uv run ... --heliostat ...`
+## Running as a Daemon
 
-Heliostat could be run independently of HelioTorrent, however, it does need to serve the README.md files to clients.
-
-## Multiple Instances
-
-HelioTorrent is designed so that the torrents it produces are instance-independent, meaning that independent instances publishing torrents should result in the same torrent metahashes, meaning that their peers will join the same swarm and be able to exchange bandwidth.
-
-Hosting a webseed contributes bandwidth to a swarm. However, peers can only discover webseeds through torrent files - they can't be learned through peer exchange - meaning that
+By default HelioTorrent will log messages to the `log` directory and to the console. You can configure HelioTorrent as a service with systemD or simply leaving it running in the background with a session manager `termux`.
