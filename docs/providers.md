@@ -1,6 +1,6 @@
-# Setting up a HelioTorrent instance
+#  Setting up a HelioTorrent instance
 
-his document describes how to use the software in this repository to serve Static CT over BitTorrent. Running HelioTorrent doesn't require any privileged access to a Static CT log, it uses the public monitoring interface.
+This document describes how to use the software in this repository to serve Static CT over BitTorrent. Running HelioTorrent doesn't require any privileged access to a Static CT log, it uses the public monitoring interface.
 
 Providers interested in using their own software stack should see [Spec](spec.md) and [Design](design.md).
 
