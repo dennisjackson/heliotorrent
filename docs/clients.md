@@ -1,32 +1,74 @@
-# Consuming a log via HelioTorrent
+# Consuming a Log via HelioTorrent
 
-## Using a BitTorrent Client
+HelioTorrent exposes an RSS feed of torrents or magnet links that represent new log data as it is produced. Any BitTorrent client that can subscribe to RSS (natively or via an add‑on) can automatically fetch and seed these entries.
 
-Almost any Bittorrent client can consume Heliotorrent feeds, provided that it either supports RSS subscriptions, or has a third party integration which does. Some popular open source options include:
+The instructions below cover two setups:
 
-    * Transmission
-    * qBitTorrent
-    * Deluge
-    * Aria2
+- Transmission + FlexGet
+- qBittorrent (built‑in RSS)
 
-qBitTorrent integrates support for RSS subscriptions natively, the others have a number of plugins which do. One particuarly useful option is FlexGet which supports all of these clients.
+FlexGet supports many other clients. TODO.
 
-### HelioTorrent with Transmission and FlexGet
+## Transmission + FlexGet
 
-* Install Transmission for your operating system.
-* Enable the RPC interface
-* Install FlexGet
-* Configure FlexGet
-* Profit.
+Transmission does not natively support RSS feeds. However, FlexGet can poll feeds and hands entries to Transmission over its RPC API.
 
-### HelioTorrent with qBitTorrent
+1) [Install Transmission](https://transmissionbt.com/download) and enable remote control from localhost:
+   - Desktop: enable “Remote”/RPC in Preferences.
+   - Daemon (`transmission-daemon`): edit its `settings.json` (stop the daemon first) and set:
+     - `"rpc-enabled": true`
+     - `"rpc-bind-address": "127.0.0.1"` (or appropriate interface)
+     - `"rpc-username"` / `"rpc-password"`
+   - Restart the daemon and confirm the web UI or `transmission-remote` works.
 
-* Install qBitTorrent
-* Enable RSS Support
-* Add a feed
-* Add an auto-downloader rule
+2) [Install FlexGet](https://www.flexget.com/Install):
+   - `uv tool install flexget` or
+   - `pipx install flexget` (or `pip install --user flexget`)
+
+4) Create a minimal FlexGet config at `~/.config/flexget/config.yml` or see the example in this repo `experiments/flexget.yaml`:
+
+```yaml
+templates:
+  heliotorrent_transmission:
+    transmission:
+      host: localhost
+      port: 9091
+      username: your_user
+      password: your_pass
+      path: DOWNLOAD_LOCATION
+
+tasks:
+  heliotorrent_LOG_NAME:
+    rss: FEED_URL
+    accept_all: yes
+    template: heliotorrent_transmission
+
+schedules:
+  - tasks: [heliotorrent]
+    interval:
+      minutes: 60
+```
+
+4) Run FlexGet as a daemon: `flexget daemon start` (or run once with `flexget execute`).
+5) Verify in Transmission that new feed items appear and begin seeding.
+
+## qBittorrent (Built‑in RSS)
+
+1) Install qBittorrent from your package manager or https://www.qbittorrent.org/.
+2) Open Preferences:
+   - RSS: Enable RSS support
+3) Add the feed:
+   - View → RSS Reader → “New subscription” → paste `FEED_URL`.
+   - Confirm that items populate under the feed.
+4) Auto‑download rule:
+   - Tools → RSS Downloader → “Add” rule named `LOG_NAME`.
+   - Disable “Smart episode filter”.
+5) Configure approprite seeding and bandwidth rules.
+6) Verify: New feed items should be added automatically and begin downloading & seeding.
 
 ## Integrating with CT Clients
+
+OPEN ISSUE
 
 This remains an open issue. There are two broad paths which could be taken. The first is to integrate BitTorrent support inside clients via native libraries. This has the benefit of preserving their existing semantics, can offer BitTorrent by default.
 
