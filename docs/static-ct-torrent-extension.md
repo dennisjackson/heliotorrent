@@ -1,10 +1,10 @@
 # Serving Static Certificate Transparency Tiles over BitTorrent
 
-This spec defines a mechanism for serving the Tiles used in Static Certificate Transparency over BitTorrent. The primary motivation is to reduce bandwidth costs for log operators, be compatible with a broad range of existing BitTorrent clients, and minimize operational complexity.
+This spec defines a mechanism for serving the Tiles used in Static Certificate Transparency over BitTorrent. The primary motivation is to reduce bandwidth costs for log operators, be compatible with a broad range of existing BitTorrent clients, and minimize operational complexity for log operators.
 
 ## Conventions used in this document
 
-TODO: Reference Static CT API
+TODO: Reference CS2SP Spec
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this
@@ -16,9 +16,13 @@ document are to be interpreted as described in [BCP 14][] [RFC 2119][] [RFC
 
 ## Overview
 
-This document is divided into three sections. Firstly, it lays out how Static CT tiles are packaged into individual torrents. Secondly, it describes how these individual torrents can be included in RSS and JSON feeds and made available for automatic consumption by clients. Finally, it describes how these torrents can be seeded via HTTP.
+This document is divided into three sections. Firstly, it lays out how Static CT tiles are packaged into individual torrents. Secondly, it describes how these individual torrents can be included in RSS and JSON feeds and made available for automatic consumption by clients. Finally, it describes how these torrents can be seeded via HTTP(S) and consumed by clients.
 
-This specification makes a number of decisions to maximize compatibility, deployability and simplicity. In particular, it focuses on making the vast majority of a log's data available over BitTorrent (>99.999%), leaving a small number of files, such as checkpoints and issuers that will need to be fetched over HTTP as described in the[The Static Certificate Transparency API](https://c2sp.org/static-ct-api).
+This specification makes a number of decisions to maximize compatibility, deployability and simplicity. In particular, it focuses on making the vast majority of a log's data available over BitTorrent (>99.999%), leaving a small number of files, such as checkpoints and issuers that will need to be fetched over HTTP(S) as described in the[The Static Certificate Transparency API](https://c2sp.org/static-ct-api).
+
+The party providing Tile Torrents need not be the log operator, it can be provided entirely by third parties on independent infrastructure. Log operators wanting to provide Tile Torrents need no specific infrastructure beyond a HTTP(S) server.
+
+Clients wanting to contribute bandwidth to Tile Torrents are able to use existing BitTorrent clients off the shelf.
 
 ## Creating Torrents
 
@@ -105,41 +109,45 @@ The RSS and JSON feeds for a torrent SHOULD be advertised in the log's manifest.
 
 ## Seeding Torrents
 
-Once a torrent file has been produced and made available to download for clients, it must be
+Once a torrent file has been produced and made available to download for clients, it must be seeded. That means, making the content of the torrent available to torrent clients.
 
-Torrent Clients are not natively compatible with fetching Tiles over HTTP.
+[BEP 19](https://www.bittorrent.org/beps/bep_0019.html) is a widely implemented standard that allows torrent clients to fetch data over HTTP(S).
 
-A Tile Webseed is defined by a URL prefix. At that URL, the server MUST:
+However, BEP 19 and the Static CT API are incompatible with each other. This section describes how a HTTP server can act as a web seed for Tile Torrents.
 
-* Ignore the first directory after the prefix (this will be the torrents name).
-* Treat the remained as the path to the file desired by the Torrent Client. This should be handled appropriately.
-* Serve HTTP content uncompressed.
+The Tile Torrent WebSeed may have a full copy of the log available locally or it may be fetch the log via the Static CT Monitoring API in order to respond to client's requests. If so, it MUST follow the relevant guidance for user agents etc. Use Caching. TODO.
 
-This can be achieved by serving the README directly. All other files can be served by rewriting them into requests suitable for the Tile log.
+TODO: SHOULD be a local caching copy. MAY be a transparent proxy.
 
-If the Webseed operator is not the Tile Log operator, care must be taken to follow the guidance in [Static CT API], e.g. by setting an appropriate user-agent and supporting gzip compression when fetching from the log.
+A Tile Torrent WebSeed for a specific Static CT log is configured defined by a URL Prefix. When a HTTP Request is received for that prefix, the WebSeed MUST trim the first directory from the request after that prefix. This is the torrent file's name.
+
+If the remaining path identifies a file path for a tile in the log, the WebSeed must respond with that file.
+
+if the remaining file path is `README.MD` then the WebSeed must respond with the content given above.
+
+The WebSeed for a log must make every file in a Tile Torrent available. Webseeds missing files or with differing contents will be rejected by clients and will be unusuable.
+
+Webseeds SHOULD support HTTPS. Webseeds MUST support HTTP/1.1.
+
+Webseeds MUST respect the `Accepts-Encoding` header and respond with appropriately encoded content. Webseeds which ignore `Acceps-Encoding` and respond with gzip encoded content (as in the Static CT Specification) will be unusuable for BitTorrent clients which don't support gzip.
 
 Multiple WebSeeds can be used in parallel for the same log. External WebSeed operators can serve many torrent clients but present as a single ordinary client to log operators.
 
 WebSeeds do not have strict uptime requirements, however if no webseeds or regular seeds are available for a torrent, clients will not be able to finish their downloads.
 
-## Consuming Torrents
+## Consuming Tile Torrents to monitor CT
 
-Clients consuming torrents.
+Clients wanting to make use of Tile Torrents need to integrate support for either RSS or JSON feeds. It is RECOMMENDED to use the JSON feed.
 
-What can they rely on in terms of behavior.
-What do they have to do?
+Once the client has fetched a JSON feed, it must decide whether to fetch a given tile via BitTorrent or via the Static CT Monitoring API.
+The client SHOULD try to fetch the tile via BitTorrent and fall back to the Static CT Monitoring API after a set timeout.
 
-## Cut Overview
+Note that a Tile Torrent can never supplant the Static CT Monitoring API because critical endpoints such as checkpoints, issuers and higher level hash tiles are only available via the Static Monitoring API.
 
-[WebSeeds](https://www.bittorrent.org/beps/bep_0019.html),
+## Supporting Log Operators
 
-Tiles are packaged into individual torrents which cover the data tiles and level 0 and level 1 hash tiles for a contiguous range of entries. Each torrent covers 4096 data tiles, their matching level 0 hash tiles and their 16 L1 hash tiles, which is roughly 2 GB of data. These torrents do not overlap and are immutable over the life of the log.
+Parties wishing to support log operators are RECOMMENDED to setup a BitTorrent client of their choice, configure it for unlimited seeding using the specific client's recommended settings and subscribe to the various RSS feeds.
 
-For even very large logs, the higher level tiles occupy less than 16 MB in total and are often in a partial state. Consequently, clients should still fetch these tiles directly from the log. Similarly, checkpoints and issuers should be read directly from the log. Even with this restriction, for a log taking 100 TB on disk, 99.999% of the log's data is available over BitTorrent.
+Parties not wishing to use BitTorrent clients directly may consider setting up their own webseeds. Log operators providing Tile Torrents can integrate these webseeds alongside their own and advertise them in tile torrents.
 
-Clients and Monitors can discover new torrents either by fetching the latest checkpoint and calculating the URL at which the corresponding torrents can be found, or by consuming an RSS feed describing the available torrents. Automatically consuming RSS feeds of torrents is widely supported by contemporary torrent clients, making it easy for bandwidth to be donated to the log in a trustless way, without having to run any custom software. This document specifies how the torrent files and RSS feed should be constructed and served.
-
-Modern torrent clients support  a standardized mechanism for fetching torrent content over HTTP. This document specifies how log operators or third parties can operate a WebSeed for a log. Multiple WebSeeds can be in operation for the same log. Bittorrent clients will automatically balance their requests between the available WebSeeds and BitTorrent seeds.
-
-Even in the pathological possible case, where there is a single webseed, no other Bitorrent seeds and two clients trying to download a torrent, the use of Bitorrent can reduce the bandwidth used by the webseed (and Tile Log) by ~40%. That is, log operators benefit from substantially reduced bandwidth costs even if clients only download data through BitTorrent and never actually seed the content.
+There is no penalty to the log operator for including a webseed which is faulty or later becomes unavailable. Clients will simply drop that Webseed and continue to download from peers or use any alternative webseeds provided.
