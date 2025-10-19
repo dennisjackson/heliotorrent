@@ -1,0 +1,69 @@
+# HelioTorrent's Design
+
+HelioTorrent is made up of two components.
+
+* HelioTorrent itself - a python application which scrapes Static CT logs into torrent files and feeds. Effectively a bespoke static site generator.
+* Heliostat - a rust application which acts a webseed for said torrents. Effectively a proxy which exposes a Webseed-compliant API over the top of a Static CT API.
+
+The two can be run together - and share a configuration file format - but can be operated independently.
+
+## HelioTorrent
+
+### Inputs and Outputs
+
+HelioTorrent takes as input a configuration file described in [providers.md]. It writes its output to the specified output directory which takes the form:
+
+TODO: Output directory structure.
+
+### Workflow
+
+For each configured log, HelioTorrent begins a seperate process in the background which handles all the jobs for that log. Each log process runs the following cycle, which is laid out in <TODO>.py:
+
+* Fetch the latest checkpoint from the log
+* Examine the output directory to see which torrents have been produced
+* If a new torrent needs to be produced
+    * Download the relevant entries to the data directory with `wget2`
+    * Generate the torrent file with `torf`
+    * Regenerate the RSS and JSON feeds for the log.
+    * Regenerate the HTML describing the state of the log.
+* Sleep
+
+### Structure
+
+* `lib` - Various library files
+    * `interactive_config.py` - Logic for generating HelioTorrent configuration files
+    * `tilelog_html.py` - Logic for generating HTML status pages
+    * `TileLog.py` - Library core, holds the core loop described above.
+    * `util.py` - Logic for interfacing with external tools, e.g. `wget2`, `torf`.
+* `tests` - Tests, relies on `pytest`. Can be invoked with `uv run pytest`. Needs network connectivity.
+* `static` - Static content used in HTML, e.g. style sheets.
+* `heliostat` - A git subtree for Heliostat.
+
+## Heliostat
+
+### Inputs and Outputs
+
+Heliostat is a rust application. Heliostat shares the same configuration file syntax as HelioTorrent, which is described in [providers.md]. Heliostat doesn't produce any output, rather it hosts a service on the configured HTTP / HTTPS ports.
+
+For each log configured in the configuration file, Heliotorrent will expose a HTTP endpoint at `/webseed/<log_name>`. This endpoint complies with BEPXX for Webseeds. HTTP requests for
+`/webseed/<log_name>/<torrent_name>/<file_path> are mapped onto proxy requests for `<log_url>/<file_path>`.
+
+As Torrent clients typically don't support compression, Heliostat automatically decompresses the response for them. As Torrent clients typically make range requests, HelioTorrent requests full files from the upstream log and caches them in an in-memory LRU cache to avoid hitting the log multiple times for a given file.
+
+Heliostat also serves the files located in the torrent directory on the path `/torrents/`. There is also a non-advertised `/statistics` endpoint which records the number of requests, total bandwidth and cache hit rate for each log.
+
+### Workflow
+
+Heliostat uses [axum] as a HTTP server which is essentialy decleatory, based on Tokeio. Handlers are registered for each endpoint.
+
+The Webseeds endpoint uses reqwests with connection pooling to fetch files from the upstream log. Each response is cached in a per-log in-memory cache.
+
+One special case is the README.md file. This file exists in the torrents but not on the log server, so it's fetched from the local torrents folder.
+
+## Development Practices
+
+* Tests
+* Cargo mutants
+* Subtree
+* Github workflows
+* Linting
