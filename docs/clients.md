@@ -7,7 +7,7 @@ The instructions below cover two setups:
 - Transmission + FlexGet
 - qBittorrent (built‑in RSS)
 
-FlexGet supports many other clients. TODO.
+FlexGet supports most popular BitTorrent clients, see their [documentation](https://flexget.com/en/Plugins#output).
 
 ## Transmission + FlexGet
 
