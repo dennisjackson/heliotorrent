@@ -4,9 +4,9 @@ This document describes how to use the software in this repository to serve Stat
 
 Providers interested in using their own software stack should see [Spec](spec.md) and [Design](design.md).
 
-## Overview
+## Overview
 
-HelioTorrent is made up of a Python component by the same name which produces torrents, effectively working as a static site generator and a Rust component called Heliostat which seeds those torrents over HTTP(S). Both are integrated together and share a config file and orchestration script. This document walks through setting them up.
+HelioTorrent is made up of a Python component by the same name which produces torrents, effectively working as a static site generator and a Rust component called Heliostat which seeds those torrents over HTTP(S). The two components are closely integrated, sharing a config file and orchestration script. This document walks through setting them up.
 
 ## Setting up HelioTorrent
 
