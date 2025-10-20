@@ -8,11 +8,11 @@ HelioTorrent packages Static Certificate Transparency (CT) tiles into .torrent f
 - Spec: [docs/spec.md](docs/spec.md)
 - Design: [docs/design.md](docs/design.md)
 
-## Consume Tiles
+## Consume Tiles (Clients)
 
-HelioTorrent works with most BitTorrent clients that support RSS. See [docs/clients.md](docs/clients.md) for step‑by‑step guides (Transmission + FlexGet, qBittorrent, etc.).
+HelioTorrent works with most BitTorrent clients that support RSS. See [docs/clients.md](docs/clients.md) for step‑by‑step guides (Transmission, qBittorrent, etc.).
 
-## Run HelioTorrent yourself
+## Run HelioTorrent (Server)
 
 Full instructions are in [docs/providers.md](docs/providers.md). The quick version is below.
 
