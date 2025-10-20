@@ -12,8 +12,8 @@ HelioTorrent packages Static Certificate Transparency (CT) tiles into .torrent f
 
 HelioTorrent works with any BitTorrent client that supports RSS (most of them). See [docs/clients.md](docs/clients.md) for step‑by‑step guides (Transmission, qBittorrent, etc.). The quick version is below.
 
-1. Install [Transmission](https://transmissionbt.com/) and enable RPC access in the settings
-2. Install Flexget with [uv](https://github.com/astral-sh/uv) `uv tool install flexget[transmission]`
+1. Install [Transmission](https://transmissionbt.com/) and enable local API access.
+2. Install Flexget with [uv](https://github.com/astral-sh/uv): `uv tool install flexget[transmission]`
 3. Grab the example config in [docs/flexget.yaml](docs/flexget.yaml)
 4. Run Flexget: `flexget -c flexget.yaml execute` 
 
