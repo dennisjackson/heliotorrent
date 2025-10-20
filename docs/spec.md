@@ -20,11 +20,9 @@ This specification covers four topics:
 - Seeding Tile Torrents via HTTP(S) Webseeds
 - Client Behavior when consuming Tile Torrents
 
-The specification aims to maximize compatibility, deployability, and simplicity. It makes almost the entire log corpus available via BitTorrent (>99.999%), while leaving a small set of files (for example, checkpoints and issuer descriptions) to still be fetched over HTTP(S) as defined in [The Static Certificate Transparency API](https://c2sp.org/static-ct-api).
+The specification aims to maximize compatibility, deployability, and simplicity. It makes almost the entire log corpus available via BitTorrent (>99.999%), aiming to reduce costs for log operators, but does not cover every file. For example, checkpoints, some hash tiles and issuer descriptions still be fetched directly from the log operator as described in the [Static Certificate Transparency API Spec](https://c2sp.org/static-ct-api).
 
-The party offering tile torrents need not be the log operator; third parties may provide them independently. A log operator that chooses to provide tile torrents does not need to expose any new software, requiring only an HTTP(S) server.
-
-Clients that wish to contribute bandwidth can use existing BitTorrent clients without modification.
+The entity creating and serving tile torrents need not be the log operator; third parties may provide them independently. Clients that wish to contribute bandwidth can use existing BitTorrent clients without modification. Log operators can also seed Tile Torrents without needing to run BitTorrent-specific software. 
 
 ## Creating Torrents
 
@@ -36,7 +34,7 @@ Tiles in a tile torrent MUST use the same directory structure as used by the Sta
 - Data tile `N` MUST be stored at `/tile/data/<N>`.
 - Hash tile `N` at tree level `L` MUST be stored at `/tile/<L>/<N>`.
 
-`N` MUST be encoded exactly as specified by the Static CT specification. Deviating from this structure makes the torrent unusable for clients.
+`N` MUST be encoded as a path exactly as specified by the Static CT specification. Deviating from this structure makes the torrent unusable for clients.
 
 Tile torrents SHOULD include a top-level `README.md` containing the following line:
 
@@ -50,7 +48,7 @@ Tile torrents SHOULD NOT include additional files. A torrent MUST be constructed
 
 Tile torrents SHOULD be named descriptively, for example by including the log name and covered entry range.
 
-Tile torrents SHOULD advertise at least one WebSeed URL, as described below.
+Tile torrents SHOULD advertise at least one WebSeed URL, as described in the section below below.
 
 Tile torrents MUST support the BitTorrent v1 protocol. Tile torrents SHOULD support the BitTorrent v2 protocol.
 
@@ -62,7 +60,7 @@ Each torrent file MUST be published over HTTPS for retrieval by clients.
 
 ### RSS Feeds
 
-Many BitTorrent clients subscribe to RSS feeds and automatically download the torrents they advertise.
+Many BitTorrent clients can subscribe to RSS feeds and automatically download the torrents they advertise.
 
 The RSS feed MUST conform to the [BEP 36](https://www.bittorrent.org/beps/bep_0036.html) specification for RSS 2.0 torrent feeds.
 
@@ -80,9 +78,9 @@ An RSS feed MAY include any number of torrent items.
 
 ### JSON Feeds
 
-JSON feeds may be simpler for dedicated CT implementations to consume.
+JSON feeds may be friendlier than RSS feeds for tooling specific to CT.
 
-A JSON feed SHOULD expose an object with the following schema.
+A JSON feed MUST expose an object with the following schema.
 
 ```json
 {
@@ -100,33 +98,32 @@ A JSON feed SHOULD expose an object with the following schema.
 }
 ```
 
-`log_name` identifies the log. `last_updated` and `creation_time` SHOULD be RFC 3339 timestamps in UTC. `torrents` is an array; each element describes a single torrent covering the inclusive `start_index` through `end_index`, the total uncompressed torrent size in bytes, and the HTTPS URL of the `.torrent` file.
+`log_name` identifies the log. `last_updated` and `creation_time` SHOULD be RFC 3339 timestamps in UTC. `torrents` is an array; each element describes a single torrent covering the inclusive `start_index` through `end_index`, the total torrent size in bytes, and the HTTPS URL of the `.torrent` file.
 
 ### Advertising Feeds
 
-OPEN ISSUE: Consider integration with the log's JSON manifest. Clint Wilson has proposed [discussion](https://groups.google.com/a/chromium.org/g/ct-policy/c/ikbxKXp_Nl4) formalizing the existing implementations.
+OPEN ISSUE: Consider integration with the log's JSON manifest. Clint Wilson has proposed [discussion](https://groups.google.com/a/chromium.org/g/ct-policy/c/ikbxKXp_Nl4) formalizing the existing manifests.
 
-Alternatively is to recommend a fixed path under the monitoring prefix.
+Alternative: Recommend a fixed path under the monitoring prefix.
 
 ## Seeding Torrents
 
 Publishing a torrent file by itself doesn't enable clients to download the contents; the associated content must be seeded so that clients can complete downloads.
 
-[BEP 19](https://www.bittorrent.org/beps/bep_0019.html) defines HTTP-based web seeds. BEP 19 is widely implemented but incompatible with the Static CT API.
-This section describes how a HTTP seed can act as a web seed for tile torrents.
+[BEP 19](https://www.bittorrent.org/beps/bep_0019.html) defines HTTP-based web seeds. BEP 19 is widely implemented but incompatible with the Static CT API. This section describes how a HTTP server can act as a web seed for tile torrents.
 
-A WebSeed MAY serve content from a complete local copy of the log or MAY fetch tiles via the Static CT Monitoring API. When fetching from a log, it MUST follow the monitoring policies (for example, identifying itself with a contactable User-Agent) and SHOULD cache responses indefinitely to minimize load on the log operator.
+A WebSeed MAY serve content from a complete local copy of the log or MAY fetch tiles via the Static CT Monitoring API. When fetching from a log, it MUST follow any policies prescribed by the log operator (for example, including a contact address in it's User-Agent) and SHOULD cache responses indefinitely to minimize load on the log.
 
-Each WebSeed serves content from a URL prefix. Upon receiving an HTTP request below that prefix, the WebSeed MUST remove the first path segment following the prefix; the removed segment is the torrent name. The remaining path identifies a file within the torrent.
+Each WebSeed serves torrent content from a URL prefix. Upon receiving an HTTP request below that prefix, the WebSeed MUST remove the first path segment following the prefix; the removed segment is the name of the torrent. The remaining path identifies a file within the torrent.
 
-- If the remaining path matches a tile file, the WebSeed MUST return the corresponding tile bytes.
+- If the remaining path matches a tile file, the WebSeed MUST return the corresponding bytes.
 - If the remaining path is `README.md`, the WebSeed MUST return the README content defined above.
 
 A WebSeed MUST make every file in the torrent available. Clients reject WebSeeds that omit files or serve mismatched content.
 
 WebSeeds SHOULD support HTTPS and MUST support HTTP/1.1.
 
-WebSeeds MUST honor the `Accept-Encoding` header and encode responses accordingly. A WebSeed that responds with gzip without client support is unusable for BitTorrent clients that cannot decode gzip and do understand `Content-Encoding`.
+WebSeeds MUST honor the `Accept-Encoding` header and encode responses accordingly. A WebSeed that responds with gzip or other formats without negotiation is unusable for most BitTorrent clients.
 
 Multiple WebSeeds MAY operate simultaneously for the same log.
 
@@ -142,8 +139,8 @@ Tile torrents do not replace the Static CT Monitoring API. Endpoints such as che
 
 ## Supporting Log Operators
 
-Parties that wish to support log operators are RECOMMENDED to set up a BitTorrent client configured for indefinite seeding using the vendor-recommended settings and to subscribe to the relevant RSS or JSON feeds.
+Parties that wish to support log operators are RECOMMENDED to configure a BitTorrent client for indefinite seeding and then subscribe to the relevant RSS feeds.
 
-Parties that prefer not to run a general-purpose BitTorrent client MAY operate WebSeeds. Log operators can advertise third-party WebSeeds alongside their own in the torrents they publish.
+Parties that prefer not to run a BitTorrent client MAY operate WebSeeds. Log operators can advertise third-party WebSeeds alongside their own in the torrents they publish.
 
 Including a faulty or unavailable WebSeed does not penalize the log operator. Clients simply exclude that WebSeed and continue downloading from remaining peers or WebSeeds.
