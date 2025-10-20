@@ -7,7 +7,7 @@ The instructions below cover two setups:
 - Transmission + FlexGet
 - qBittorrent (built‑in RSS)
 
-FlexGet supports most popular BitTorrent clients, see their [documentation](https://flexget.com/en/Plugins#output).
+FlexGet is a tool for automating most popular BitTorrent clients, see their [documentation](https://flexget.com/en/Plugins#output) for further details.
 
 ## Transmission + FlexGet
 
@@ -71,4 +71,4 @@ OPEN ISSUE
 
 This remains an open issue. There are two broad paths which could be taken. The first is to integrate BitTorrent support inside clients via native libraries. This has the benefit of preserving their existing semantics, can offer BitTorrent by default.
 
-The second would be to implement a shim which exposes a classic Sunlight interface but proxies requests to either local filesystem (provisioned by a BitTorrent client) or uses a BitTorrent library to stream requests directly. There are various packages which allow torrents to be mounted via a virtual file system.
+The second would be to implement a shim which exposes a classic Static CT HTTP API but proxies requests to either the local filesystem (provisioned by a BitTorrent client) or uses a BitTorrent library to stream requests directly from the swarm. There are various packages which allow torrents to be mounted via a virtual file system and streamed on request.
