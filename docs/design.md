@@ -2,7 +2,7 @@
 
 HelioTorrent consists of two components that work together to publish and serve Static CT data over BitTorrent:
 
-- HelioTorrent (Python) — packages [Static CT API](static-ct-api.md) logs into .torrent files and machine-consumable feeds (RSS/JSON). It’s a small static‑site generator for Tile Torrents.
+- HelioTorrent (Python) — packages [Static CT API](static-ct-api.md) logs into .torrent files and machine-readable feeds (RSS/JSON). It’s a small static‑site generator for Tile Torrents.
 - Heliostat (Rust) — a WebSeed server for those torrents, acting as a proxy that serves the Static CT files to BitTorrent clients via the WebSeed mechanism defined by [BEP 19](https://www.bittorrent.org/beps/bep_0019.html).
 
 They can run together and share a single YAML configuration format, but either could be operated independently.
@@ -22,7 +22,7 @@ index.html
   torrents.json
 ```
 
-This directory is intended to be offered via HTTP.
+This directory is intended to be offered via HTTP(S).
 
 ### Workflow
 
@@ -32,7 +32,7 @@ For each configured log, HelioTorrent starts a separate background process which
 - Inspects the output directory to determine what torrents already exist.
 - If new data is available:
   - Downloads the relevant tiles with `wget2`.
-  - Generates a .torrent with `torf`.
+  - Generates a .torrent file with `torf`.
   - Regenerates the RSS and JSON feeds for the log.
   - Regenerates the HTML status pages.
 - Sleeps for a configured interval, then repeats.
@@ -69,7 +69,7 @@ are mapped to the corresponding Static CT Monitoring URL:
 - Because many BitTorrent clients don’t accept compressed responses, Heliostat serves uncompressed bodies.
 - Because clients often use range requests, Heliostat fetches whole files from the upstream log and stores them in an in‑memory LRU cache to avoid repeated log requests.
 
-Heliostat also serves the generated torrent files under `/torrents/`, and exposes a non-advertised `/statistics` endpoint reporting per‑log request counts, bandwidth, and cache hit rate.
+Heliostat also serves the generated torrent files and other static files under `/torrents/`, and exposes a non-advertised `/statistics` endpoint reporting per‑log request counts, bandwidth, and cache hit rate.
 
 ### Workflow
 
